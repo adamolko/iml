@@ -170,14 +170,56 @@ cor(housing$TotalBsmtSF, housing$GrLivArea)
 #--> probably good enough to keep the amount of living area instead of number of rooms
 housing = housing %>% select(-TotRmsAbvGrd )
 # --> correlation between 1stFlrSF, 2ndFlrSF and GrLivArea also high... lets drop them for now, dont seem to interesting also for hypothesis later on
+#BUT: we can use the number of floors instead :)
+housing = housing %>% mutate(numb_add_flr = ifelse(`1stFlrSF`>0, 1, 0))
+housing = housing %>% mutate(numb_add_flr = ifelse(`2ndFlrSF`>0, 2, numb_add_flr))
 housing = housing %>% select(-"1stFlrSF", -"2ndFlrSF" )
 
 
+#2) LandContour & Landslope
+ggplot(housing, aes(LandContour, ..count..)) + geom_bar(aes(fill = LandSlope), position = "dodge") #both capture almost the same thing
+#lets only keep one of them then:
+housing = housing %>% select(-LandContour)
 
+#3) Style of dwelling & MSSubClass & numb_add_flr
+ggplot(housing, aes( HouseStyle, ..count..)) + geom_bar(aes(fill = MSSubClass), position = "dodge") 
+ggplot(housing, aes( HouseStyle, ..count..)) + geom_bar(aes(fill = numb_add_flr), position = "dodge") 
+#Dont think we need a combination of HouseStyle together with numb_add_flr & OverallQual --> numb_add_flr & OverallQual should measure exactly that together
+#Since: OverallQual: Rates the overall material and finish of the house
+#And: HouseStyle: Style of dwelling
+# 1Story	One story
+# 1.5Fin	One and one-half story: 2nd level finished
+# 1.5Unf	One and one-half story: 2nd level unfinished
+# 2Story	Two story
+# 2.5Fin	Two and one-half story: 2nd level finished
+# 2.5Unf	Two and one-half story: 2nd level unfinished
+# SFoyer	Split Foyer
+# SLvl	Split Level
+housing = housing %>% select(-HouseStyle)
 
+#4) What about MSSubClass, numb_add_flr & YearBuilt?
 
+# MSSubClass: Identifies the type of dwelling involved in the sale.	
+# 
+# 20	1-STORY 1946 & NEWER ALL STYLES
+# 30	1-STORY 1945 & OLDER
+# 40	1-STORY W/FINISHED ATTIC ALL AGES
+# 45	1-1/2 STORY - UNFINISHED ALL AGES
+# 50	1-1/2 STORY FINISHED ALL AGES
+# 60	2-STORY 1946 & NEWER
+# 70	2-STORY 1945 & OLDER
+# 75	2-1/2 STORY ALL AGES
+# 80	SPLIT OR MULTI-LEVEL
+# 85	SPLIT FOYER
+# 90	DUPLEX - ALL STYLES AND AGES
+# 120	1-STORY PUD (Planned Unit Development) - 1946 & NEWER
+# 150	1-1/2 STORY PUD - ALL AGES
+# 160	2-STORY PUD - 1946 & NEWER
+# 180	PUD - MULTILEVEL - INCL SPLIT LEV/FOYER
+# 190	2 FAMILY CONVERSION - ALL STYLES AND AGES
 
-
+#Probably fine to kick out MSSubClass, since we cover the number of floors and the year anyway + the interpretation for IML is questionable if we use this subclass variable
+housing = housing %>% select(-MSSubClass)
 
 
 
