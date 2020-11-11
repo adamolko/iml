@@ -222,11 +222,61 @@ housing = housing %>% select(-HouseStyle)
 housing = housing %>% select(-MSSubClass)
 
 
+#5) Condition 1 & Condition 2 seem not very interesting for our IML task:
+
+# Condition1: Proximity to various conditions
+# 
+# Artery	Adjacent to arterial street
+# Feedr	Adjacent to feeder street	
+# Norm	Normal	
+# RRNn	Within 200' of North-South Railroad
+#        RRAn	Adjacent to North-South Railroad
+#        PosN	Near positive off-site feature--park, greenbelt, etc.
+#        PosA	Adjacent to postive off-site feature
+#        RRNe	Within 200' of East-West Railroad
+# RRAe	Adjacent to East-West Railroad
+# 
+# Condition2: Proximity to various conditions (if more than one is present)
+# 
+# Artery	Adjacent to arterial street
+# Feedr	Adjacent to feeder street	
+# Norm	Normal	
+# RRNn	Within 200' of North-South Railroad
+#        RRAn	Adjacent to North-South Railroad
+#        PosN	Near positive off-site feature--park, greenbelt, etc.
+#        PosA	Adjacent to postive off-site feature
+#        RRNe	Within 200' of East-West Railroad
+# RRAe	Adjacent to East-West Railroad
+
+housing = housing %>% select(-Condition1, -Condition2)
+
+#6) LotConfig
+
+# LotConfig: Lot configuration
+# 
+# Inside	Inside lot
+# Corner	Corner lot
+# CulDSac	Cul-de-sac
+# FR2	Frontage on 2 sides of property
+# FR3	Frontage on 3 sides of property
+
+summary(housing$LotConfig) #most of them inside or corner
+#Probably also not very interesting for our IML task, lets drop it for now
+housing = housing %>% select(-LotConfig)
+
+#7) RoofStyle: describes type of roof & RoofMatl: Roof material
+
+summary(housing$RoofMatl) #Roof material has no variation at all, makes no sense to keep, would only lead to overfitting
+summary(housing$RoofStyle) #NOT SURE YET about dropping that
+housing = housing %>% select(-RoofMatl)
+
+#8)
+
+
+
 
 #corrplot::corrplot(DescTools::PairApply(df, DescTools::CramerV))
 
 
 
 
-asd
-summary(housing$MSSubClass)
