@@ -1,7 +1,7 @@
 library(tidyverse)
 library(forcats)
-
-path ="D:/Dropbox/Mine/LMU/Data Science/IML"
+library(corrplot)
+path ="C:/R - Workspace/IML"
 data = paste0(path, "/train.csv")
 
 housing = read_csv(data)
@@ -75,6 +75,7 @@ summary(housing$Fireplaces)
 housing$FireplaceQu = fct_explicit_na(housing$FireplaceQu, "No")
 summary(housing$FireplaceQu)
 #NOT SURE IF DROP
+housing = select(housing, -Fireplaces)
 
 # 6) Garage variables
 summary(housing$GarageArea)
@@ -148,9 +149,39 @@ summary(housing$Electrical)
 #Probably fine just deleting that one single observation 
 housing = housing %>% filter(!is.na(Electrical))
 
-########################
+###########################
+#Analyse variables further:
+
+#Take numerics for now and analyse correlation:
+numerics = select_if(housing, is.numeric)
+corrs = cor(numerics)
+
+corrplot(corrs, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45)
+
+#1) GrLivArea (above ground living area)strongly correlated with: TotRmsAbvGrd (total roombs above ground) 
+cor(housing$BedroomAbvGr, housing$GrLivArea)
+cor(housing$TotRmsAbvGrd, housing$GrLivArea)
+cor(housing$FullBath, housing$GrLivArea)
+cor(housing$`1stFlrSF`, housing$TotalBsmtSF)
+cor(housing$`1stFlrSF`, housing$GrLivArea)
+cor(housing$`2ndFlrSF`, housing$GrLivArea)
+cor(housing$TotalBsmtSF, housing$GrLivArea)
+#--> probably good enough to keep the amount of living area instead of number of rooms
+housing = housing %>% select(-TotRmsAbvGrd )
+# --> correlation between 1stFlrSF, 2ndFlrSF and GrLivArea also high... lets drop them for now, dont seem to interesting also for hypothesis later on
+housing = housing %>% select(-"1stFlrSF", -"2ndFlrSF" )
 
 
+
+
+
+
+
+
+
+
+#corrplot::corrplot(DescTools::PairApply(df, DescTools::CramerV))
 
 
 
