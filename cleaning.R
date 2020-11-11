@@ -1,11 +1,10 @@
 library(tidyverse)
 library(forcats)
 library(corrplot)
-path ="C:/R - Workspace/IML"
-data = paste0(path, "/train.csv")
+# path ="C:/R - Workspace/IML"
+# data = paste0(path, "/train.csv")
 
-housing = read_csv(data)
-
+# housing = read_csv(data)
 
 # col_character() 
 # col_date()
@@ -19,8 +18,8 @@ housing = read_csv(data)
 # col_skip()
 
 
-
-housing = read_csv(data, col_types = cols(.default = col_factor(), Id = col_character(), LotFrontage = col_double(), LotArea = col_double(),
+# the path thingy didn't work for me, changed to just filename, sorry
+housing = read_csv('train.csv', col_types = cols(.default = col_factor(), Id = col_character(), LotFrontage = col_double(), LotArea = col_double(),
                                           YearBuilt = col_integer(), YearRemodAdd = col_integer(), MasVnrArea = col_double(),
                                           BsmtFinSF1 = col_double(), BsmtFinSF2= col_double(), BsmtUnfSF =  col_double(),
                                           TotalBsmtSF = col_double(), "1stFlrSF"= col_double(), "2ndFlrSF"= col_double(),
@@ -30,7 +29,7 @@ housing = read_csv(data, col_types = cols(.default = col_factor(), Id = col_char
                                           Fireplaces = col_integer(), GarageYrBlt = col_integer(), GarageCars = col_integer(),
                                           GarageArea = col_double(), WoodDeckSF = col_double(), OpenPorchSF= col_double(),
                                           EnclosedPorch= col_double(), "3SsnPorch"= col_double(), ScreenPorch= col_double(),
-                                          PoolArea= col_double(), YrSold  = col_integer()
+                                          PoolArea= col_double(), YrSold  = col_integer(), SalePrice = col_double()
                                           
                                           
                                           ))
@@ -61,6 +60,7 @@ summary(housing$Fence)
 housing = select(housing, -Fence)
 
 # 4) MiscFeature: dont even know, what this should mean
+#it's random stuff like elevator, shed, tennis court, etc.
 summary(housing$MiscFeature)
 #But with 96% missing we cant use it anyway
 #DROP
@@ -84,6 +84,7 @@ summary(housing$GarageCars)
 summary(housing$GarageCond) #No garage means NA heres
 summary(housing$GarageQual) #Garage quality and condition are almost exactly equal, and have almost no variation at all (1311 are average and only 3 poor)
 housing$GarageQual = fct_explicit_na(housing$GarageQual, "No") #NAs are only there when no garage, so replace NA with real value
+#GarageFinish is the condition of the interior of the garage
 summary(housing$GarageFinish) #What does that even mean, that some have an unfinished garage?
 summary(housing$GarageYrBlt) #I dont think the year matters at all, if the condition is good/bad :)
 summary(housing$GarageType) #Type somehow describes, how garage relates to house, probably also not super important
@@ -168,6 +169,7 @@ cor(housing$`1stFlrSF`, housing$GrLivArea)
 cor(housing$`2ndFlrSF`, housing$GrLivArea)
 cor(housing$TotalBsmtSF, housing$GrLivArea)
 #--> probably good enough to keep the amount of living area instead of number of rooms
+#i would rather keep them, e.g. family with kids would want several separate rooms instead of two big ones
 housing = housing %>% select(-TotRmsAbvGrd )
 # --> correlation between 1stFlrSF, 2ndFlrSF and GrLivArea also high... lets drop them for now, dont seem to interesting also for hypothesis later on
 #BUT: we can use the number of floors instead :)
@@ -270,13 +272,89 @@ summary(housing$RoofMatl) #Roof material has no variation at all, makes no sense
 summary(housing$RoofStyle) #NOT SURE YET about dropping that
 housing = housing %>% select(-RoofMatl)
 
-#8)
-
-
-
-
 #corrplot::corrplot(DescTools::PairApply(df, DescTools::CramerV))
 
+#8)
+#__________________________________________________________________________
+#my party started here
+housing$FullBath <- as_factor(housing$FullBath)
+housing$HalfBath <- as_factor(housing$HalfBath)
+housing$KitchenQual <- as_factor(housing$KitchenQual)
 
+#take a look at correlation between numerical features and target variable
+numerics = select_if(housing, is.numeric)
 
+correlations <- c()
+for (name in names(numerics)) {
+  correlations[name] <- cor(numerics[name], housing$SalePrice)[1]
+}
+correlations
+#in my humble opinion, we can just drop the columns that have correlation less than 10% with the target variable
+housing = select(housing, -c("LowQualFinSF", "3SsnPorch", "PoolArea", "YrSold"))
 
+# now let's see what's up with other features
+library(purrr)
+
+#can safely throw out id, like who cares
+housing <- select(housing, -Id)
+
+#i would also argue that street is useless as well, only 6 values that differ
+housing <- select(housing, -Street)
+
+#same with Utilities, only 1 value differs
+housing <- select(housing, -Utilities)
+
+#if there are <= 5 different values with considerable(>=10) amount of observations in each,
+#then transform them to categorical
+categorical <- c("MSZoning", "LotShape", "LandSlope","BldgType", "ExterQual", 
+                 "BsmtQual",  "CentralAir", "KitchenQual", "FireplaceQu", "PavedDrive")
+
+for (name in categorical) {
+  housing[name] <- as_factor(housing[name])
+}
+
+#too much shit in neighborhood, exterior1st, exterior2nd don't even know what to do with it
+non_numerics <- select_if(housing, negate(is.numeric))
+
+#roofstyle has several types with few observations -> collapse
+housing$RoofStyle <- factor(housing$RoofStyle, levels=c("Gable", "Hip", "Gambrel", "Mansard", "Flat", "Shed"), 
+              labels=c("Gable", "Hip", "Other", "Other", "Other", "Other"))
+#can do the same for SaleType
+#might also collapse COD and Other, not sure
+housing$SaleType <- factor(housing$SaleType, levels=c("WD", "New", "COD", "ConLD", "ConLI", "CWD", "ConLw", "Con", "Oth"), 
+                            labels=c("WD", "New", "COD", "Other", "Other", "Other", "Other", "Other", "Other"))
+#Electrical 
+housing$Electrical <- factor(housing$Electrical, levels=c("SBrkr", "FuseF", "FuseA", "FuseP", "Mix"),
+                             labels=c("SBrkr", "Fuse or Mix", "Fuse or Mix", "Fuse or Mix", "Fuse or Mix"))
+#FireplaceQu: leave categories TA - average, AA - above average, BA - below average, No - no fireplace
+housing$FireplaceQu <- factor(housing$FireplaceQu, levels=c("TA", "Gd", "Fa", "Ex", "Po", "No"),
+                              labels=c("TA", "AA", "BA", "AA", "BA", "No"))
+#Functional: can collapse by degree of deduction (moderate went to minimal, severe went to major
+housing$Functional <- factor(housing$Functional, levels=c("Typ", "Min1", "Maj1", "Min2", "Mod", "Maj2", "Sev"),
+                             labels=c("Typ", "Min", "Maj", "Min", "Min", "Maj", "Maj"))
+
+#
+
+for (name in names(non_numerics)) {
+  print(summary(housing[name]))
+}
+
+#not sure how to collapse GarageQual and SaleCondition
+
+#testing categorical variables for importance with ANOVA
+non_numerics <- select_if(housing, negate(is.numeric))
+
+probabilities <- c()
+for (name in names(non_numerics)) {
+  formula <- paste("SalePrice",name, sep = "~")
+  model <- aov(as.formula(formula), data = housing)
+  summary(model)
+  sum_model = unlist(summary(model))
+  probabilities[name] = sum_model["Pr(>F)1"]
+}
+ 
+print(probabilities<0.01)
+#for 99% confidence LandSlope, MiscVal and MoSold are not important -> drop
+housing <- select(housing, -c("LandSlope", "MiscVal", "MoSold"))
+
+print(str(housing))
