@@ -401,3 +401,8 @@ housing$OverallQual <- factor(housing$OverallQual, levels=c("1", "2", "3", "4", 
 housing$OverallCond <- factor(housing$OverallCond, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
                               labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
 
+
+#4) Get a factor if remodeling was done or not and drop remodeling year
+housing = housing %>% mutate(Remod = ifelse(YearBuilt == YearRemodAdd, 1, 0))
+housing$Remod = as.factor(housing$Remod)
+housing = select(housing, -YearRemodAdd)
