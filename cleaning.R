@@ -1,10 +1,10 @@
 library(tidyverse)
 library(forcats)
 library(corrplot)
-# path ="C:/R - Workspace/IML"
-# data = paste0(path, "/train.csv")
+path ="C:/R - Workspace/IML"
+data = paste0(path, "/train.csv")
 
-# housing = read_csv(data)
+#housing = read_csv(data)
 
 # col_character() 
 # col_date()
@@ -19,7 +19,7 @@ library(corrplot)
 
 
 # the path thingy didn't work for me, changed to just filename, sorry
-housing = read_csv('train.csv', col_types = cols(.default = col_factor(), Id = col_character(), LotFrontage = col_double(), LotArea = col_double(),
+housing = read_csv(data, col_types = cols(.default = col_factor(), Id = col_character(), LotFrontage = col_double(), LotArea = col_double(),
                                           YearBuilt = col_integer(), YearRemodAdd = col_integer(), MasVnrArea = col_double(),
                                           BsmtFinSF1 = col_double(), BsmtFinSF2= col_double(), BsmtUnfSF =  col_double(),
                                           TotalBsmtSF = col_double(), "1stFlrSF"= col_double(), "2ndFlrSF"= col_double(),
@@ -289,8 +289,9 @@ for (name in names(numerics)) {
   correlations[name] <- cor(numerics[name], housing$SalePrice)[1]
 }
 correlations
+
 #in my humble opinion, we can just drop the columns that have correlation less than 10% with the target variable
-housing = select(housing, -c("LowQualFinSF", "3SsnPorch", "PoolArea", "YrSold"))
+housing = select(housing, -c("LowQualFinSF", "PoolArea", "YrSold"))
 
 # now let's see what's up with other features
 library(purrr)
@@ -341,6 +342,11 @@ for (name in names(non_numerics)) {
 
 #not sure how to collapse GarageQual and SaleCondition
 
+#from month sold get season sold (maybe that has an impact?)
+summary(housing$MoSold)
+housing$SeasonSold <- factor(housing$MoSold, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11","12"),
+                             labels=c("w", "w", "sp", "sp", "sp", "su", "su", "su", "a",  "a", "a", "w"))
+summary(housing$SeasonSold)
 #testing categorical variables for importance with ANOVA
 non_numerics <- select_if(housing, negate(is.numeric))
 
@@ -355,6 +361,43 @@ for (name in names(non_numerics)) {
  
 print(probabilities<0.01)
 #for 99% confidence LandSlope, MiscVal and MoSold are not important -> drop
-housing <- select(housing, -c("LandSlope", "MiscVal", "MoSold"))
+housing <- select(housing, -c("LandSlope", "MiscVal", "MoSold", "SeasonSold"))
 
 print(str(housing))
+
+
+
+###my part again
+#1) do something with porch variables & wooddeck (almost the same as a porch)
+#are there houses with multiple porches?
+housing %>% filter(OpenPorchSF>0 & EnclosedPorch>0 & ScreenPorch>0)
+housing %>% filter(EnclosedPorch>0 & ScreenPorch>0)
+housing %>% filter(OpenPorchSF>0 & ScreenPorch>0)
+housing %>% filter(ScreenPorch>0 & WoodDeckSF>0)
+summary(housing$WoodDeckSF)
+# ---> to some extent there are, although not that many
+#Lets try to just some up the area of wooddeck & porches and then use a categorical to indicate which type :)
+housing = housing %>% mutate(porch_area = WoodDeckSF + OpenPorchSF + EnclosedPorch + `3SsnPorch`  + ScreenPorch)
+housing = housing %>% mutate(porch_type = ifelse(WoodDeckSF>0, "wood_deck", NA))
+housing = housing %>% mutate(porch_type = ifelse(OpenPorchSF>0, ifelse(is.na(porch_type), "open_porch", "multiple"), porch_type))
+housing = housing %>% mutate(porch_type = ifelse(EnclosedPorch>0, ifelse(is.na(porch_type), "enclosed_porch", "multiple"), porch_type))
+housing = housing %>% mutate(porch_type = ifelse(ScreenPorch>0, ifelse(is.na(porch_type), "screen_porch", "multiple"), porch_type))
+housing = housing %>% mutate(porch_type = ifelse(`3SsnPorch`>0, ifelse(is.na(porch_type), "three_s_porch", "multiple"), porch_type))
+housing$porch_type = housing$porch_type %>% replace_na("no")
+housing$porch_type = as.factor(housing$porch_type)
+summary(housing$porch_type)
+summary(housing$porch_area)
+
+housing = select(housing, -WoodDeckSF, -OpenPorchSF, -EnclosedPorch, -`3SsnPorch`, -ScreenPorch)
+#2) do something with exteriors
+# Exterior1st and Exterior2nd are factors with far too many categories
+ggplot(housing, aes( ExterQual, ..count..)) + geom_bar(aes(fill = Exterior1st), position = "dodge") 
+ggplot(housing, aes( ExterQual, ..count..)) + geom_bar(aes(fill = Exterior2nd), position = "dodge") 
+#We can revert this later on, but just drop the type of exterior for now... we still evaluate how "good" the exterior is with ExterQual and ExterCond and it doesnt help us much for IML
+housing = select(housing, -Exterior1st, -Exterior2nd)
+#3) Since we still have too many variables, let's try to compress at least some of them, e.g. OverallQual & OverallCond
+housing$OverallQual <- factor(housing$OverallQual, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+                             labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
+housing$OverallCond <- factor(housing$OverallCond, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+                              labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
+
