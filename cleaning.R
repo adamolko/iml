@@ -290,6 +290,9 @@ for (name in names(numerics)) {
 }
 correlations
 
+summary(housing$PoolArea)
+housing = housing %>%  mutate(pool=ifelse(PoolArea>0, 1, 0))
+housing$pool = as.factor(housing$pool)
 #in my humble opinion, we can just drop the columns that have correlation less than 10% with the target variable
 housing = select(housing, -c("LowQualFinSF", "PoolArea", "YrSold"))
 
@@ -406,3 +409,33 @@ housing$OverallCond <- factor(housing$OverallCond, levels=c("1", "2", "3", "4", 
 housing = housing %>% mutate(Remod = ifelse(YearBuilt == YearRemodAdd, 1, 0))
 housing$Remod = as.factor(housing$Remod)
 housing = select(housing, -YearRemodAdd)
+
+#5) Collapse foundation
+summary(housing$Foundation)
+housing$Foundation <- factor(housing$Foundation, levels=c( "PConc", "CBlock", "BrkTil",   "Wood" ,  "Slab" , "Stone" ),
+                             labels=c("PConc", "CBlock", "BrkTil",   "Other" ,  "Other" , "Other" ))
+
+
+#6) Heating
+summary(housing$Heating) #Absolutely no variation here
+housing = select(housing, -Heating)
+
+#7) GarageQual 
+summary(housing$GarageQual) #almost no variation in here as well
+housing = select(housing, -GarageQual)
+
+#8) ExterCond: collapse that, because not enough variation
+summary(housing$ExterCond)
+housing$ExterCond <- factor(housing$ExterCond, levels=c(  "TA",   "Gd",   "Fa",   "Po",   "Ex"  ),
+                             labels=c( "2",   "3",   "1",   "1",   "3"  ) )
+summary(housing$ExterCond)
+
+#9) SaleCondition: collapse that, because not enough variation
+#For now not by too much
+summary(housing$SaleCondition) 
+housing$SaleCondition <- factor(housing$SaleCondition, levels=c(  "Normal", "Abnorml", "Partial", "AdjLand",  "Alloca",  "Family"  ),
+                            labels=c( "Normal", "Abnorml", "Partial", "Other",  "Other",  "Family"  ) )
+
+
+#For initial analysis can probably get rid of some garage variables, basement variables, exterior stuff
+print(str(housing))
