@@ -1,8 +1,3 @@
-library(tidyverse)
-library(forcats)
-library(corrplot)
-path ="C:/R - Workspace/IML"
-data = paste0(path, "/train.csv")
 
 #housing = read_csv(data)
 
@@ -432,18 +427,18 @@ summary(housing$ExterCond)
 
 #9) SaleCondition: collapse that, because not enough variation
 #For now not by too much
-summary(housing$SaleCondition) 
+summary(housing$SaleCondition)
 housing$SaleCondition <- factor(housing$SaleCondition, levels=c(  "Normal", "Abnorml", "Partial", "AdjLand",  "Alloca",  "Family"  ),
                             labels=c( "Normal", "Abnorml", "Partial", "Other",  "Other",  "Family"  ) )
 
 
 #10) LotShape: collapse that, because not enough variation
-summary(housing$LotShape) 
+summary(housing$LotShape)
 housing$LotShape <- factor(housing$LotShape, levels=c(  "Reg", "IR1", "IR2", "IR3"   ),
                                 labels=c( "Reg", "IR1", "IR2.5", "IR2.5"   ) )
-summary(housing$LotShape) 
+summary(housing$LotShape)
 
-#10) PavedDrive: collapse that as well
+#11) PavedDrive: collapse that as well
 summary(housing$PavedDrive)
 housing$PavedDrive <- factor(housing$PavedDrive, levels=c(  "Y",    "N",    "P"   ),
                            labels=c( "Y",    "N or P",    "N or P"    ) )

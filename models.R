@@ -5,10 +5,20 @@ library(dplyr)
 library(readr)
 library(plyr)
 library(glmnet)
+library(tidyverse)
+library(forcats)
+library(corrplot)
+
+path ="C:/R - Workspace/IML"
+data = paste0(path, "/train.csv")
+cleaning_path = paste0(path, "/cleaning.R")
+source(cleaning_path)
+
+data = housing
 #loading and cleaning data a bit
-data <- read.csv("clean_data.csv")
-data <- select(data, -X)
-str(data)
+# data <- read.csv("clean_data.csv")
+# data <- select(data, -X)
+# str(data)
 
 #LINEAR MODEL
 #train test split
@@ -27,8 +37,10 @@ summary(model_lm)
 predictions_lm <- predict(model_lm, test_X)
 
 rmse_lm <- rmse(test_y, predictions_lm)
+rmse_lm
 #rmse of 27400.36
 rmsle_lm <- rmsle(test_y, predictions_lm)
+rmsle_lm
 #rmsle 0.1427626
 
 #XGBOOST
@@ -39,7 +51,7 @@ dummies <- select(data, -numerics)
 
 dmy <- dummyVars(" ~ .", data = dummies)
 trsf <- data.frame(predict(dmy, newdata = dummies))
-for (name in not_dummies) {
+for (name in numerics) {
   trsf[name] <- data[name]
 }
 
@@ -60,6 +72,7 @@ rmse_xgboost
 #rmse 25145.49 - without encoding OverallQual and stuff like that
 #rmse 25054.61 - with encoding
 rmsle_xgboost <- rmsle(test_y, predictions_xgboost)
+rmsle_xgboost
 #0.1312619
 
 #LASSO
