@@ -1,4 +1,3 @@
-
 #housing = read_csv(data)
 
 # col_character() 
@@ -13,8 +12,8 @@
 # col_skip()
 
 
-# the path thingy didn't work for me, changed to just filename, sorry
-housing = read_csv(data, col_types = cols(.default = col_factor(), Id = col_character(), LotFrontage = col_double(), LotArea = col_double(),
+if (filename == "train.csv") {
+housing = read_csv(filename, col_types = cols(.default = col_factor(), Id = col_character(), LotFrontage = col_double(), LotArea = col_double(),
                                           YearBuilt = col_integer(), YearRemodAdd = col_integer(), MasVnrArea = col_double(),
                                           BsmtFinSF1 = col_double(), BsmtFinSF2= col_double(), BsmtUnfSF =  col_double(),
                                           TotalBsmtSF = col_double(), "1stFlrSF"= col_double(), "2ndFlrSF"= col_double(),
@@ -27,7 +26,21 @@ housing = read_csv(data, col_types = cols(.default = col_factor(), Id = col_char
                                           PoolArea= col_double(), YrSold  = col_integer(), SalePrice = col_double()
                                           
                                           
-                                          ))
+))} else {
+housing = read_csv(filename, col_types = cols(.default = col_factor(), Id = col_character(), LotFrontage = col_double(), LotArea = col_double(),
+                                              YearBuilt = col_integer(), YearRemodAdd = col_integer(), MasVnrArea = col_double(),
+                                              BsmtFinSF1 = col_double(), BsmtFinSF2= col_double(), BsmtUnfSF =  col_double(),
+                                              TotalBsmtSF = col_double(), "1stFlrSF"= col_double(), "2ndFlrSF"= col_double(),
+                                              LowQualFinSF =  col_double(), GrLivArea = col_double(), BsmtFullBath = col_integer(),
+                                              BsmtHalfBath = col_integer(), FullBath = col_integer(), HalfBath = col_integer(),
+                                              BedroomAbvGr = col_integer(), KitchenAbvGr = col_integer(), TotRmsAbvGrd =  col_integer(),
+                                              Fireplaces = col_integer(), GarageYrBlt = col_integer(), GarageCars = col_integer(),
+                                              GarageArea = col_double(), WoodDeckSF = col_double(), OpenPorchSF= col_double(),
+                                              EnclosedPorch= col_double(), "3SsnPorch"= col_double(), ScreenPorch= col_double(),
+                                              PoolArea= col_double(), YrSold  = col_integer()
+                                              
+                                              
+))}
 
 missing_perc = as_vector(housing %>% summarise_all(list(name = ~sum(is.na(.))/length(.))))
 missing_perc[missing_perc>0.1]
@@ -152,8 +165,8 @@ housing = housing %>% filter(!is.na(Electrical))
 numerics = select_if(housing, is.numeric)
 corrs = cor(numerics)
 
-corrplot(corrs, type = "upper", order = "hclust", 
-         tl.col = "black", tl.srt = 45)
+# corrplot(corrs, type = "upper", order = "hclust", 
+         # tl.col = "black", tl.srt = 45)
 
 #1) GrLivArea (above ground living area)strongly correlated with: TotRmsAbvGrd (total roombs above ground) 
 cor(housing$BedroomAbvGr, housing$GrLivArea)
@@ -272,18 +285,16 @@ housing = housing %>% select(-RoofMatl)
 #8)
 #__________________________________________________________________________
 #my party started here
-housing$FullBath <- as_factor(housing$FullBath)
-housing$HalfBath <- as_factor(housing$HalfBath)
 housing$KitchenQual <- as_factor(housing$KitchenQual)
 
 #take a look at correlation between numerical features and target variable
 numerics = select_if(housing, is.numeric)
 
-correlations <- c()
-for (name in names(numerics)) {
-  correlations[name] <- cor(numerics[name], housing$SalePrice)[1]
-}
-correlations
+# correlations <- c()
+# for (name in names(numerics)) {
+#   correlations[name] <- cor(numerics[name], housing$SalePrice)[1]
+# }
+# correlations
 
 summary(housing$PoolArea)
 housing = housing %>%  mutate(pool=ifelse(PoolArea>0, 1, 0))
@@ -348,16 +359,16 @@ summary(housing$SeasonSold)
 #testing categorical variables for importance with ANOVA
 non_numerics <- select_if(housing, negate(is.numeric))
 
-probabilities <- c()
-for (name in names(non_numerics)) {
-  formula <- paste("SalePrice",name, sep = "~")
-  model <- aov(as.formula(formula), data = housing)
-  summary(model)
-  sum_model = unlist(summary(model))
-  probabilities[name] = sum_model["Pr(>F)1"]
-}
- 
-print(probabilities<0.01)
+# probabilities <- c()
+# for (name in names(non_numerics)) {
+#   formula <- paste("SalePrice",name, sep = "~")
+#   model <- aov(as.formula(formula), data = housing)
+#   summary(model)
+#   sum_model = unlist(summary(model))
+#   probabilities[name] = sum_model["Pr(>F)1"]
+# }
+#  
+# print(probabilities<0.01)
 #for 99% confidence LandSlope, MiscVal and MoSold are not important -> drop
 housing <- select(housing, -c("LandSlope", "MiscVal", "MoSold", "SeasonSold"))
 
