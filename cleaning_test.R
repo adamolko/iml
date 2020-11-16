@@ -338,7 +338,7 @@ for (name in names(non_numerics)) {
 
 print(probabilities<0.01)
 #for 99% confidence LandSlope, MiscVal and MoSold are not important -> drop
-housing <- select(housing, -c("LandSlope", "MiscVal", "MoSold", "SeasonSold"))
+housing <- select(housing, -c("LandSlope", "MiscVal", "MoSold"))
 
 print(str(housing))
 
