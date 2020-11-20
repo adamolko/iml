@@ -396,11 +396,12 @@ housing = select(housing, -Exterior1st, -Exterior2nd)
 #3) Since we still have too many variables, let's try to compress at least some of them, e.g. OverallQual & OverallCond
 # But first: get additional variable as suggested in kaggle notebook:
 #housing = housing %>% mutate(QualCond = as.numeric(OverallQual)* as.numeric(OverallCond))
-housing$OverallQual <- factor(housing$OverallQual, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
-                              labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
-housing$OverallCond <- factor(housing$OverallCond, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
-                              labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
-
+# housing$OverallQual <- factor(housing$OverallQual, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+#                               labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
+# housing$OverallCond <- factor(housing$OverallCond, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+#                               labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
+housing$OverallQual = as.numeric(housing$OverallQual)
+housing$OverallCond = as.numeric(housing$OverallCond)
 
 #4) Get a factor if remodeling was done or not and drop remodeling year
 housing = housing %>% mutate(Remod = ifelse(YearBuilt == YearRemodAdd, 1, 0))

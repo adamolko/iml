@@ -12,16 +12,16 @@ library(mlr)
 library(cmaes)
 
 
-# path ="C:/R - Workspace/IML"
-# path_test = paste0(path, "/test.csv")
-# path_train = paste0(path, "/train.csv")
-# cleaning_path_test = paste0(path, "/cleaning_test.R")
-# cleaning_path_train = paste0(path, "/cleaning_train.R")
+path ="C:/R - Workspace/IML"
+path_test = paste0(path, "/test.csv")
+path_train = paste0(path, "/train.csv")
+cleaning_path_test = paste0(path, "/cleaning_test.R")
+cleaning_path_train = paste0(path, "/cleaning_train.R")
 
-path_train = "train.csv"
+#path_train = "train.csv"
 set.seed(123)
-# source(cleaning_path_train)
-source("cleaning_train.R")
+source(cleaning_path_train)
+#source("cleaning_train.R")
 train = housing
 
 
@@ -29,7 +29,7 @@ train = housing
 numerics <- c("LotArea", "YearBuilt", "TotalBsmtSF",
               "GrLivArea", "porch_area", "SalePrice",
               "FullBath", "HalfBath", "BedroomAbvGr",
-              "KitchenAbvGr", "GarageCars")
+              "KitchenAbvGr", "GarageCars", "OverallQual", "OverallCond")
 # numerics <- c("LotArea", "YearBuilt", "TotalBsmtSF",
 #               "GrLivArea", "porch_area", "SalePrice",
 #               "FullBath", "HalfBath", "BedroomAbvGr",
@@ -59,7 +59,7 @@ test_y <- test$SalePrice
 dtrain <- xgb.DMatrix(data = data.matrix(train_X), label=train_y)
 dtest <- xgb.DMatrix(data = data.matrix(test_X),  label=test_y)
 
-model_xgboost <- xgboost(dtrain, max.depth = 3, nround = 500)
+model_xgboost <- xgboost(dtrain, max.depth = 3, nround = 300)
 #need this because otherwise "feature names do not coincide" error
 colnames(dtest) <- NULL
 predictions_xgboost <- predict(model_xgboost, dtest)
@@ -84,8 +84,8 @@ params <- makeParamSet(
                         makeIntegerParam("max_depth",lower = 2L,upper = 10L), 
                         makeNumericParam("min_child_weight",lower = 1L,upper = 10L), 
                         makeNumericParam("subsample",lower = 0.5,upper = 1), 
-                       # makeNumericParam("eta",lower = 0.1,upper = 0.4), 
-                        makeIntegerParam("nrounds",lower = 50,upper = 300), 
+                        makeNumericParam("eta",lower = 0.05,upper = 0.4), 
+                        makeIntegerParam("nrounds",lower = 50,upper = 500), 
                         makeIntegerParam("early_stopping_rounds",lower = 0,upper = 10), 
                         makeNumericParam("colsample_bytree",lower = 0.5,upper = 1))
 rdesc <- makeResampleDesc("CV",iters=5L)
