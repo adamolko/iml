@@ -30,10 +30,6 @@ numerics <- c("LotArea", "YearBuilt", "TotalBsmtSF",
               "GrLivArea", "porch_area", "SalePrice",
               "FullBath", "HalfBath", "BedroomAbvGr",
               "KitchenAbvGr", "GarageCars", "OverallQual", "OverallCond")
-# numerics <- c("LotArea", "YearBuilt", "TotalBsmtSF",
-#               "GrLivArea", "porch_area", "SalePrice",
-#               "FullBath", "HalfBath", "BedroomAbvGr",
-#               "KitchenAbvGr", "GarageCars", "QualCond")
 dummies <- select(train, -all_of(numerics))
 
 dmy <- dummyVars(" ~ .", data = dummies)
@@ -97,7 +93,7 @@ ctrl <- makeTuneControlCMAES()
 #parallelization
 library(parallel)
 library(parallelMap) 
-# parallelStartSocket(cpus = detectCores())
+
 parallelStart(mode="socket", cpu=8, level="mlr.tuneParams")
 
 mytune <- tuneParams(learner = lrn, task = traintask, resampling = rdesc, 

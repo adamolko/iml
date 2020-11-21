@@ -133,8 +133,8 @@ housing = housing %>% filter(!is.na(Electrical))
 numerics = select_if(housing, is.numeric)
 corrs = cor(numerics)
 
-corrplot(corrs, type = "upper", order = "hclust", 
-         tl.col = "black", tl.srt = 45)
+# corrplot(corrs, type = "upper", order = "hclust", 
+#          tl.col = "black", tl.srt = 45)
 
 #1) GrLivArea (above ground living area)strongly correlated with: TotRmsAbvGrd (total roombs above ground) 
 cor(housing$BedroomAbvGr, housing$GrLivArea)
@@ -253,16 +253,16 @@ housing = housing %>% select(-RoofMatl)
 #8)
 #__________________________________________________________________________
 #my party started here
-housing$KitchenQual <- as_factor(housing$KitchenQual)
+# housing$KitchenQual <- as_factor(housing$KitchenQual)
 
 #take a look at correlation between numerical features and target variable
 numerics = select_if(housing, is.numeric)
 
-correlations <- c()
-for (name in names(numerics)) {
-  correlations[name] <- cor(numerics[name], housing$SalePrice)[1]
-}
-correlations
+# correlations <- c()
+# for (name in names(numerics)) {
+#   correlations[name] <- cor(numerics[name], housing$SalePrice)[1]
+# }
+# correlations
 
 summary(housing$PoolArea)
 housing = housing %>%  mutate(pool=ifelse(PoolArea>0, 1, 0))
@@ -327,16 +327,16 @@ summary(housing$SeasonSold)
 #testing categorical variables for importance with ANOVA
 non_numerics <- select_if(housing, negate(is.numeric))
 
-probabilities <- c()
-for (name in names(non_numerics)) {
-  formula <- paste("SalePrice",name, sep = "~")
-  model <- aov(as.formula(formula), data = housing)
-  summary(model)
-  sum_model = unlist(summary(model))
-  probabilities[name] = sum_model["Pr(>F)1"]
-}
-
-print(probabilities<0.01)
+# probabilities <- c()
+# for (name in names(non_numerics)) {
+#   formula <- paste("SalePrice",name, sep = "~")
+#   model <- aov(as.formula(formula), data = housing)
+#   summary(model)
+#   sum_model = unlist(summary(model))
+#   probabilities[name] = sum_model["Pr(>F)1"]
+# }
+# 
+# print(probabilities<0.01)
 #for 99% confidence LandSlope, MiscVal and MoSold are not important -> drop
 housing <- select(housing, -c("LandSlope", "MiscVal", "MoSold"))
 
@@ -373,10 +373,8 @@ ggplot(housing, aes( ExterQual, ..count..)) + geom_bar(aes(fill = Exterior2nd), 
 #We can revert this later on, but just drop the type of exterior for now... we still evaluate how "good" the exterior is with ExterQual and ExterCond and it doesnt help us much for IML
 housing = select(housing, -Exterior1st, -Exterior2nd)
 #3) Since we still have too many variables, let's try to compress at least some of them, e.g. OverallQual & OverallCond
-housing$OverallQual <- factor(housing$OverallQual, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
-                              labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
-housing$OverallCond <- factor(housing$OverallCond, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
-                              labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
+housing$OverallQual = as.numeric(housing$OverallQual)
+housing$OverallCond = as.numeric(housing$OverallCond)
 
 
 #4) Get a factor if remodeling was done or not and drop remodeling year
