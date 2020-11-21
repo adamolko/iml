@@ -98,10 +98,11 @@ ctrl <- makeTuneControlCMAES()
 library(parallel)
 library(parallelMap) 
 # parallelStartSocket(cpus = detectCores())
-parallelStart(mode="multicore", cpu=4, level="mlr.tuneParams")
+parallelStart(mode="socket", cpu=8, level="mlr.tuneParams")
 
 mytune <- tuneParams(learner = lrn, task = traintask, resampling = rdesc, 
                      par.set = params, control = ctrl, show.info = T)
+saveRDS(mytune, paste0(path, "/tuning_result.rds"))
 mytune$x
 lrn_tune <- setHyperPars(lrn,par.vals = mytune$x)
 xgmodel <- train(learner = lrn_tune,task = traintask)
