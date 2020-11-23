@@ -20,20 +20,47 @@ source("cleaning_train.R")
 data = housing
 
 #LINEAR MODEL
-#train test split
 smp_size <- floor(0.75 * nrow(data))
 set.seed(123)
-#75/25 train/test split
 train_ind <- sample(seq_len(nrow(data)), size = smp_size)
-train <- data[train_ind, ]
-test <- data[-train_ind, ]
+
+#one-hot encoding
+not_dummies <- c("LotArea", "YearBuilt", "TotalBsmtSF",
+                 "GrLivArea", "porch_area", "SalePrice",
+                 "FullBath", "HalfBath", "BedroomAbvGr",
+                 "KitchenAbvGr", "GarageCars", "OverallQual", 
+                 "OverallCond", "CentralAir", "PavedDrive",
+                 "pool", "Remod")
+
+dummies <- select(data, -not_dummies)
+dmy <- dummyVars(" ~ .", data = dummies)
+trsf <- data.frame(predict(dmy, newdata = dummies))
+for (name in not_dummies) {
+  trsf[name] <- data[name]
+}
+
+#removing one level for each dummy encoded categorical feature
+reference_levels <- c("MSZoning.RH", "LotShape.IR2.5",
+                      "Neighborhood.Blueste", "BldgType.Twnhs",
+                      "RoofStyle.Other", "ExterQual.Fa", 
+                      "ExterCond.3", "Foundation.Other",
+                      "BsmtQual.No", "BsmtFinType1.No", 
+                      "HeatingQC.Po", "KitchenQual.Fa",
+                      "Functional.Maj", "FireplaceQu.No",
+                      "SaleType.Other", "SaleCondition.Family",
+                      "SeasonSold.a", "porch_type.no")
+trsf <- select(trsf, -reference_levels)
+
+#75/25 train/test split
+train <- trsf[train_ind, ]
+test <- trsf[-train_ind, ]
+train_X <- select(train, -SalePrice)
+train_y <- train$SalePrice
 test_X <- select(test, -SalePrice)
 test_y <- test$SalePrice
 
 #linear model without interactions
 model_lm <- lm(SalePrice~., data = train)
-#if you look at the summary, the removal of one level in each categorical variable
-#is done by the model itself
 summary(model_lm)
 predictions_lm <- predict(model_lm, test_X)
 
@@ -45,27 +72,8 @@ rmsle_lm
 #rmsle 0.1546733
 
 #LASSO
-not_dummies <- c("LotArea", "YearBuilt", "TotalBsmtSF",
-                 "GrLivArea", "porch_area", "SalePrice",
-                 "FullBath", "HalfBath", "BedroomAbvGr",
-                 "KitchenAbvGr", "GarageCars", "OverallQual", 
-                 "OverallCond", "CentralAir", "PavedDrive",
-                 "pool", "Remod")
+#uses the same dummy encoding as lm
 
-#one-hot encoding 
-dummies <- select(data, -not_dummies)
-dmy <- dummyVars(" ~ .", data = dummies)
-trsf <- data.frame(predict(dmy, newdata = dummies))
-for (name in not_dummies) {
-  trsf[name] <- data[name]
-}
-
-train <- trsf[train_ind, ]
-test <- trsf[-train_ind, ]
-train_X <- select(train, -SalePrice)
-train_y <- train$SalePrice
-test_X <- select(test, -SalePrice)
-test_y <- test$SalePrice
 #choosing best lambda value based on training data
 lambdas <- 10^seq(2, -3, by = -.1)
 lasso_reg <- cv.glmnet(data.matrix(train_X), train_y, alpha = 1, lambda = lambdas, standardize = TRUE, nfolds = 5)
