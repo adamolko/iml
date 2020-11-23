@@ -11,30 +11,34 @@ library(corrplot)
 library(mlr)
 library(cmaes)
 
+ 
+# path ="C:/R - Workspace/IML"
+# path_test = paste0(path, "/test.csv")
+# path_train = paste0(path, "/train.csv")
+# cleaning_path_test = paste0(path, "/cleaning_test.R")
+# cleaning_path_train = paste0(path, "/cleaning_train.R")
 
-path ="C:/R - Workspace/IML"
-path_test = paste0(path, "/test.csv")
-path_train = paste0(path, "/train.csv")
-cleaning_path_test = paste0(path, "/cleaning_test.R")
-cleaning_path_train = paste0(path, "/cleaning_train.R")
-
-#path_train = "train.csv"
+path_train = "data/train.csv"
+path_test = "data/test.csv"
 set.seed(123)
-source(cleaning_path_train)
-#source("cleaning_train.R")
+# source(cleaning_path_train)
+source("cleaning_train.R")
 train = housing
 
 
 #one-hot encoding for train
-numerics <- c("LotArea", "YearBuilt", "TotalBsmtSF",
+not_dummies <- c("LotArea", "YearBuilt", "TotalBsmtSF",
               "GrLivArea", "porch_area", "SalePrice",
               "FullBath", "HalfBath", "BedroomAbvGr",
-              "KitchenAbvGr", "GarageCars", "OverallQual", "OverallCond")
-dummies <- select(train, -all_of(numerics))
+              "KitchenAbvGr", "GarageCars", "OverallQual", 
+              "OverallCond", "CentralAir", "PavedDrive",
+              "pool", "Remod")
+dummies <- select(train, -all_of(not_dummies))
 
 dmy <- dummyVars(" ~ .", data = dummies)
 trsf <- data.frame(predict(dmy, newdata = dummies))
-for (name in numerics) {
+for (name in not_dummies) {
+  print(name)
   trsf[name] <- train[name]
 }
 train <- trsf
@@ -101,15 +105,18 @@ mytune <- tuneParams(learner = lrn, task = traintask, resampling = rdesc,
 saveRDS(mytune, paste0(path, "/tuning_result.rds"))
 mytune$x
 lrn_tune <- setHyperPars(lrn,par.vals = mytune$x)
-xgmodel <- train(learner = lrn_tune,task = traintask)
 
+parameters <- readRDS("results/tuning_result.rds")
+parameters <- parameters$x
+parameters[["data"]] <- dtrain
+xgmodel <- do.call(xgboost,parameters)
+# xgmodel <- train(learner = lrn_tune,task = traintask)
 
+xgpred <- predict(xgmodel,dtest)
 
-xgpred <- predict(xgmodel,testtask)
-
-rmse_xgboost <- rmse(xgpred$data$truth, xgpred$data$response)
+rmse_xgboost <- rmse(test_y, xgpred)
 rmse_xgboost
-rmsle_xgboost <- rmsle(xgpred$data$truth, xgpred$data$response)
+rmsle_xgboost <- rmsle(test_y, xgpred)
 rmsle_xgboost
 #0.122832
 #best so far:

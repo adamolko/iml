@@ -291,6 +291,9 @@ for (name in categorical) {
   housing[name] <- as_factor(housing[name])
 }
 
+housing$CentralAir <- factor(housing$CentralAir, levels=c("Y", "N"), labels=c("1","0"))
+
+
 #too much shit in neighborhood, exterior1st, exterior2nd don't even know what to do with it
 non_numerics <- select_if(housing, negate(is.numeric))
 
@@ -327,17 +330,6 @@ summary(housing$SeasonSold)
 #testing categorical variables for importance with ANOVA
 non_numerics <- select_if(housing, negate(is.numeric))
 
-# probabilities <- c()
-# for (name in names(non_numerics)) {
-#   formula <- paste("SalePrice",name, sep = "~")
-#   model <- aov(as.formula(formula), data = housing)
-#   summary(model)
-#   sum_model = unlist(summary(model))
-#   probabilities[name] = sum_model["Pr(>F)1"]
-# }
-# 
-# print(probabilities<0.01)
-#for 99% confidence LandSlope, MiscVal and MoSold are not important -> drop
 housing <- select(housing, -c("LandSlope", "MiscVal", "MoSold"))
 
 print(str(housing))
@@ -420,6 +412,7 @@ summary(housing$PavedDrive)
 housing$PavedDrive <- factor(housing$PavedDrive, levels=c(  "Y",    "N",    "P"   ),
                              labels=c( "Y",    "N or P",    "N or P"    ) )
 summary(housing$PavedDrive)
+housing$PavedDrive <- factor(housing$PavedDrive, levels=c("Y", "N or P"), labels=c("1","0"))
 
 
 

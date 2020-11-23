@@ -13,7 +13,6 @@
 # col_skip()
 
 
-# the path thingy didn't work for me, changed to just filename, sorry
 housing = read_csv(path_train, col_types = cols(.default = col_factor(), Id = col_character(), LotFrontage = col_double(), LotArea = col_double(),
                                           YearBuilt = col_integer(), YearRemodAdd = col_integer(), MasVnrArea = col_double(),
                                           BsmtFinSF1 = col_double(), BsmtFinSF2= col_double(), BsmtUnfSF =  col_double(),
@@ -309,6 +308,8 @@ for (name in categorical) {
   housing[name] <- as_factor(housing[name])
 }
 
+housing$CentralAir <- factor(housing$CentralAir, levels=c("Y", "N"), labels=c("1","0"))
+
 #too much shit in neighborhood, exterior1st, exterior2nd don't even know what to do with it
 non_numerics <- select_if(housing, negate(is.numeric))
 
@@ -346,7 +347,7 @@ housing$SeasonWarm <- factor(housing$SeasonSold, levels=c("w", "w", "sp", "sp", 
 summary(housing$SeasonSold)
 #testing categorical variables for importance with ANOVA
 non_numerics <- select_if(housing, negate(is.numeric))
-
+non_numerics <- subset(non_numerics, -CentralAir, -PavedDrive)
 probabilities <- c()
 for (name in names(non_numerics)) {
   formula <- paste("SalePrice",name, sep = "~")
@@ -443,10 +444,11 @@ summary(housing$LotShape)
 
 #11) PavedDrive: collapse that as well
 summary(housing$PavedDrive)
-housing$PavedDrive <- factor(housing$PavedDrive, levels=c(  "Y",    "N",    "P"   ),
-                             labels=c( "Y",    "N or P",    "N or P"    ) )
+housing$PavedDrive <- factor(housing$PavedDrive, levels=c(  "Y",  "N",  "P"  ),
+                             labels=c( "Y", "N or P", "N or P"  ) )
 summary(housing$PavedDrive)
 
+housing$PavedDrive <- factor(housing$PavedDrive, levels=c("Y", "N or P"), labels=c("1","0"))
 
 
 

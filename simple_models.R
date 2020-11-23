@@ -15,52 +15,57 @@ library(ipred)
 # data = paste0(path, "/train.csv")
 # cleaning_path = paste0(path, "/cleaning.R")
 # source(cleaning_path)
-source("cleaning.R")
+path_train = "data/train.csv"
+source("cleaning_train.R")
 data = housing
 
 #LINEAR MODEL
 #train test split
 smp_size <- floor(0.75 * nrow(data))
 set.seed(123)
+#75/25 train/test split
 train_ind <- sample(seq_len(nrow(data)), size = smp_size)
 train <- data[train_ind, ]
 test <- data[-train_ind, ]
-train_X <- select(train, -SalePrice)
-train_y <- train$SalePrice
 test_X <- select(test, -SalePrice)
 test_y <- test$SalePrice
 
+#linear model without interactions
 model_lm <- lm(SalePrice~., data = train)
+#if you look at the summary, the removal of one level in each categorical variable
+#is done by the model itself
 summary(model_lm)
 predictions_lm <- predict(model_lm, test_X)
 
 rmse_lm <- rmse(test_y, predictions_lm)
 rmse_lm
-#rmse of 25763.99
+#rmse of 29486.5
 rmsle_lm <- rmsle(test_y, predictions_lm)
 rmsle_lm
-#rmsle 0.1387397
+#rmsle 0.1546733
 
 #LASSO
-numerics <- c("LotArea", "YearBuilt", "TotalBsmtSF", 
-              "GrLivArea", "porch_area", "SalePrice",
-              "FullBath", "HalfBath", "BedroomAbvGr",
-              "KitchenAbvGr", "GarageCars")
+not_dummies <- c("LotArea", "YearBuilt", "TotalBsmtSF",
+                 "GrLivArea", "porch_area", "SalePrice",
+                 "FullBath", "HalfBath", "BedroomAbvGr",
+                 "KitchenAbvGr", "GarageCars", "OverallQual", 
+                 "OverallCond", "CentralAir", "PavedDrive",
+                 "pool", "Remod")
 
 #one-hot encoding 
-dummies <- select(data, -numerics)
+dummies <- select(data, -not_dummies)
 dmy <- dummyVars(" ~ .", data = dummies)
 trsf <- data.frame(predict(dmy, newdata = dummies))
-for (name in numerics) {
+for (name in not_dummies) {
   trsf[name] <- data[name]
 }
+
 train <- trsf[train_ind, ]
 test <- trsf[-train_ind, ]
 train_X <- select(train, -SalePrice)
 train_y <- train$SalePrice
 test_X <- select(test, -SalePrice)
 test_y <- test$SalePrice
-
 #choosing best lambda value based on training data
 lambdas <- 10^seq(2, -3, by = -.1)
 lasso_reg <- cv.glmnet(data.matrix(train_X), train_y, alpha = 1, lambda = lambdas, standardize = TRUE, nfolds = 5)
@@ -72,9 +77,10 @@ lasso_model <- glmnet(data.matrix(train_X), train_y, alpha = 1, lambda = lambda_
 predictions_lasso <- predict(lasso_model, s = lambda_best, newx = data.matrix(test_X))
 rmse_lasso <- rmse(test_y, predictions_lasso)
 rmse_lasso
-#26248.91
+#29044.89
 rmsle_lasso <- rmsle(test_y, predictions_lasso)
 rmsle_lasso
+#0.1496133
 
 #REGRESSION TREES
 #with one-hot encoding rmse is actually worse
@@ -83,7 +89,7 @@ test <- data[-train_ind, ]
 regtree_model <- rpart(formula = SalePrice ~ ., data = train)
 pred <- predict(regtree_model, newdata = test)
 rmse(test$SalePrice, pred)
-#38993.68
+#44788.71
 rpart.plot(regtree_model)
 #cp - cost complexity value
 plotcp(regtree_model)
@@ -138,16 +144,16 @@ optimal_tree <- rpart(
   formula = SalePrice ~ .,
   data    = train,
   method = "poisson",
-  control = list(minsplit = 1, maxdepth = 13, cp = 0.01)
+  control = list(minsplit = 14, maxdepth = 5, cp = 0.01)
 )
 
 pred <- predict(optimal_tree, newdata = test)
 rmse_regtree <- rmse(test$SalePrice, pred)
 rmse_regtree
-#38659.02 well, doesn't change that much
+#42437.68 well, doesn't change that much
 rmsle_regtree <- rmsle(test$SalePrice, pred)
 rmsle_regtree
-#0.2136424
+#0.2312028
 
 #BAGGED TREES
 ctrl <- trainControl(method = "cv",  number = 10) 

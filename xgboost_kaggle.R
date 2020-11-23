@@ -11,13 +11,14 @@ library(corrplot)
 library(mlr)
 
 #loading the data
-path_test = "test.csv"
-path_train = "train.csv"
+path_test = "data/test.csv"
+path_train = "data/train.csv"
 source("cleaning_train.R")
 train = housing
 source("cleaning_test.R")
 test = housing
-
+parameters <- readRDS("results/tuning_result_complete_dataset.rds")
+parameters
 #one-hot encoding for train data
 numerics <- c("LotArea", "YearBuilt", "TotalBsmtSF",
               "GrLivArea", "porch_area", "SalePrice",
@@ -55,9 +56,9 @@ dtest <- xgb.DMatrix(data = data.matrix(test))
 #tried just running with best parameters from 75/25 train/test split
 #rmsle 0.23721
 parameters
-model_xgboost <- xgboost(dtrain, booster = "gbtree", max.depth = 4, min_child_weight=8.49,
-                         nround = 429, random_state = 41, eta = 0.0643,
-                         subsample = 0.947, early_stopping_rounds = 9, colsample_bytree = 0.986)
+model_xgboost <- xgboost(dtrain, booster = "gbtree", max.depth = 8, min_child_weight=1.69,
+                         nround = 347, random_state = 41, eta = 0.05,
+                         subsample = 0.56, early_stopping_rounds = 4, colsample_bytree = 1)
 #need the following, otherwise get "feature names are different" error
 colnames(dtest) <- NULL
 predictions_xgboost <- predict(model_xgboost, dtest)
@@ -110,4 +111,4 @@ pred <- data.frame(predictions_xgboost)
 colnames(pred) <- "SalePrice"
 pred$Id <- 1461:2919
 pred <- pred[c("Id", "SalePrice")]
-write.csv(pred, "test_output.csv", row.names = F)
+write.csv(pred, "results/test_output.csv", row.names = F)
