@@ -11,20 +11,31 @@ library(corrplot)
 library(mlr)
 library(cmaes)
 
- 
-# path ="C:/R - Workspace/IML"
-# path_test = paste0(path, "/test.csv")
-# path_train = paste0(path, "/train.csv")
-# cleaning_path_test = paste0(path, "/cleaning_test.R")
-# cleaning_path_train = paste0(path, "/cleaning_train.R")
-
-path_train = "data/train.csv"
-path_test = "data/test.csv"
 set.seed(123)
-# source(cleaning_path_train)
-source("cleaning_train.R")
-train = housing
 
+#ada_check = TRUE
+ada_check = FALSE
+
+#Tell me if that works :)
+if(ada_check){
+  # path_train = "data/train.csv"
+  # path_test = "data/test.csv"
+  # source("cleaning_train.R")
+  path = ""
+  path_test = paste0(path, "/data/test.csv")
+  path_train = paste0(path, "/data/train.csv")
+  cleaning_path_test = paste0(path, "/cleaning_test.R")
+  cleaning_path_train = paste0(path, "/cleaning_train.R")
+  source(cleaning_path_train)
+} else{
+  path ="C:/R - Workspace/IML"
+  path_test = paste0(path, "/data/test.csv")
+  path_train = paste0(path, "/data/train.csv")
+  cleaning_path_test = paste0(path, "/cleaning_test.R")
+  cleaning_path_train = paste0(path, "/cleaning_train.R")
+  source(cleaning_path_train)
+}
+train = housing
 
 #one-hot encoding for train
 not_dummies <- c("LotArea", "YearBuilt", "TotalBsmtSF",
@@ -43,14 +54,14 @@ for (name in not_dummies) {
 }
 train <- trsf
 
-#-----
-#Simple example without tuning:
 #sampling train/test 75/25
 smp_size <- floor(0.75 * nrow(trsf))
 train_ind <- sample(seq_len(nrow(trsf)), size = smp_size)
 train <- trsf[train_ind, ]
 test <- trsf[-train_ind, ]
 
+#------------------------------
+#Simple example without tuning:
 train_X <- select(train, -SalePrice)
 train_y <- train$SalePrice
 test_X <- select(test, -SalePrice)
@@ -70,8 +81,9 @@ rmsle_xgboost <- rmsle(test_y, predictions_xgboost)
 rmsle_xgboost
 #0.1331943
 
-#-------
-#Now with tuning:
+
+#------------------------------
+#Now do tuning:
 traintask <- makeRegrTask(data = train,target = "SalePrice")
 testtask <- makeRegrTask(data = test, target = "SalePrice")
 
@@ -84,11 +96,11 @@ params <- makeParamSet(
                         makeIntegerParam("max_depth",lower = 2L,upper = 10L), 
                         makeNumericParam("min_child_weight",lower = 1L,upper = 10L), 
                         makeNumericParam("subsample",lower = 0.5,upper = 1), 
-                        makeNumericParam("eta",lower = 0.05,upper = 0.4), 
+                        makeNumericParam("eta",lower = 0.01,upper = 0.4), 
                         makeIntegerParam("nrounds",lower = 50,upper = 500), 
                         makeIntegerParam("early_stopping_rounds",lower = 0,upper = 10), 
                         makeNumericParam("colsample_bytree",lower = 0.5,upper = 1))
-rdesc <- makeResampleDesc("CV",iters=5L)
+rdesc <- makeResampleDesc("CV",iters=10L)
 
 #makeTuneControlCMAES only works with int and num parameters,
 #had to remove learner type
@@ -104,20 +116,50 @@ mytune <- tuneParams(learner = lrn, task = traintask, resampling = rdesc,
                      par.set = params, control = ctrl, show.info = T)
 saveRDS(mytune, paste0(path, "/tuning_result.rds"))
 mytune$x
-lrn_tune <- setHyperPars(lrn,par.vals = mytune$x)
 
-parameters <- readRDS("results/tuning_result.rds")
-parameters <- parameters$x
-parameters[["data"]] <- dtrain
-xgmodel <- do.call(xgboost,parameters)
+#--------------------------
+#Now run model with best parameters:
+traintask <- makeRegrTask(data = train,target = "SalePrice")
+testtask <- makeRegrTask(data = test, target = "SalePrice")
+
+lrn <- makeLearner("regr.xgboost",predict.type = "response")
+lrn$par.vals <- list( objective="reg:squarederror", eval_metric="rmsle")
+#parameters <- readRDS("results/tuning_result.rds")
+tuning_result <- readRDS(paste0(path, "/results/tuning_result.rds"))
+parameters = tuning_result$x 
+lrn_tune <- setHyperPars(lrn,par.vals = mytune$x)  
+xgmodel <- train(learner = lrn_tune,task = traintask)
+
+
+#parameters[["data"]] <- dtrain
+#xgmodel <- do.call(xgboost,parameters)
 # xgmodel <- train(learner = lrn_tune,task = traintask)
+#xgpred <- predict(xgmodel,dtest)
 
-xgpred <- predict(xgmodel,dtest)
+xgpred <- predict(xgmodel,testtask)
 
-rmse_xgboost <- rmse(test_y, xgpred)
+rmse_xgboost <- rmse(xgpred$data$truth, xgpred$data$response)
 rmse_xgboost
-rmsle_xgboost <- rmsle(test_y, xgpred)
+rmsle_xgboost <- rmsle(xgpred$data$truth, xgpred$data$response)
 rmsle_xgboost
+
+#save training data & model for IML stuff
+saveRDS(xgmodel, paste0(path, "/results/xgboost_model.rds"))
+saveRDS(train, paste0(path, "/results/training_data.rds"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #0.122832
 #best so far:
 # "gbtree"

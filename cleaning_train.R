@@ -475,4 +475,12 @@ describe(housing$HeatingQC)
 #                                labels=c("Ex",    "Gd" ,   "TA",    "Fa & Po",    "Fa & Po"))
 
 #For initial analysis can probably get rid of some garage variables, basement variables, exterior stuff
+
+
+#Changing some factors to numerical:
+housing$CentralAir = as.numeric(housing$CentralAir)
+housing$PavedDrive = as.numeric(housing$PavedDrive)
+housing$Remod = as.numeric(housing$Remod)
+housing$pool = as.numeric(housing$pool)
+
 print(str(housing))
