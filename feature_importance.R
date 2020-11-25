@@ -94,7 +94,7 @@ f = function(task, model, pred, feats, extra.args) {
 meas = makeMeasure(id = "RMSLE", minimize = TRUE,
             properties = c("regr", "response"), fun = f, extra.args = list())
 
-imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 20, measures  = meas,
+imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 50, measures  = meas,
                         features = list(
                           MSZoning = c("MSZoning.RL", "MSZoning.RM", "MSZoning.C..all.", "MSZoning.FV", "MSZoning.RH"),
                           LotShape = c("LotShape.Reg", "LotShape.IR1", "LotShape.IR2.5"),
@@ -187,11 +187,10 @@ ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), p
 
 #--------------------------------
 #Interaction strength
-
-
 mod <- Predictor$new(xgmodel, data = select(training_data, - SalePrice), y = select(training_data, SalePrice))
-ia <- Interaction$new(mod)
-ia$results
+ia <- Interaction$new(mod,  grid.size = 50)
+
+
 
 plot(ia)
 #Group the effect of the dummies for each category together?
