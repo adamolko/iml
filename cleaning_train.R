@@ -283,7 +283,7 @@ correlations
 
 summary(housing$PoolArea)
 housing = housing %>%  mutate(pool=ifelse(PoolArea>0, 1, 0))
-housing$pool = as.factor(housing$pool)
+#housing$pool = as.factor(housing$pool)
 #in my humble opinion, we can just drop the columns that have correlation less than 10% with the target variable
 housing = select(housing, -c("LowQualFinSF", "PoolArea", "YrSold"))
 
@@ -406,7 +406,7 @@ housing$OverallCond = as.numeric(housing$OverallCond)
 
 #4) Get a factor if remodeling was done or not and drop remodeling year
 housing = housing %>% mutate(Remod = ifelse(YearBuilt == YearRemodAdd, 1, 0))
-housing$Remod = as.factor(housing$Remod)
+#housing$Remod = as.factor(housing$Remod)
 housing = select(housing, -YearRemodAdd)
 
 #5) Collapse foundation
@@ -479,8 +479,10 @@ describe(housing$HeatingQC)
 
 #Changing some factors to numerical:
 housing$CentralAir = as.numeric(housing$CentralAir)
+housing = housing %>% mutate(CentralAir = ifelse(CentralAir == 2,1,0))
 housing$PavedDrive = as.numeric(housing$PavedDrive)
-housing$Remod = as.numeric(housing$Remod)
-housing$pool = as.numeric(housing$pool)
+housing = housing %>% mutate(PavedDrive = ifelse(PavedDrive == 2, 1,0 ))
+#housing$Remod = as.numeric(housing$Remod)
+#housing$pool = as.numeric(housing$pool)
 
 print(str(housing))

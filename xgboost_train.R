@@ -127,7 +127,8 @@ lrn$par.vals <- list( objective="reg:squarederror", eval_metric="rmsle")
 #parameters <- readRDS("results/tuning_result.rds")
 tuning_result <- readRDS(paste0(path, "/results/tuning_result.rds"))
 parameters = tuning_result$x 
-lrn_tune <- setHyperPars(lrn,par.vals = mytune$x)  
+lrn_tune <- setHyperPars(lrn,par.vals = parameters)  
+
 xgmodel <- train(learner = lrn_tune,task = traintask)
 
 
