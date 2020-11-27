@@ -52,6 +52,20 @@ for (name in not_dummies) {
   print(name)
   trsf[name] <- train[name]
 }
+
+#for interpretation purposes, should drop one dummy for each categorical variable:
+reference_levels <- c("MSZoning.RH", "LotShape.IR2.5",
+                      "Neighborhood.Blueste", "BldgType.Twnhs",
+                      "RoofStyle.Other", "ExterQual.Fa", 
+                      "ExterCond.3", "Foundation.Other",
+                      "BsmtQual.No", "BsmtFinType1.No",
+                      "HeatingQC.Po", "KitchenQual.Fa",
+                      "Functional.Maj", "FireplaceQu.No",
+                      "SaleType.Other", "SaleCondition.Other",
+                      "SeasonSold.w", "porch_type.no", "Electrical.SBrkr")
+trsf <- select(trsf, -reference_levels)
+
+
 train <- trsf
 
 #sampling train/test 75/25
@@ -119,6 +133,7 @@ mytune$x
 
 #--------------------------
 #Now run model with best parameters:
+set.seed(123)
 traintask <- makeRegrTask(data = train,target = "SalePrice")
 testtask <- makeRegrTask(data = test, target = "SalePrice")
 

@@ -10,18 +10,28 @@ library(corrplot)
 library(rpart)
 library(rpart.plot)
 library(ipred)
+library(mctest)
 
-# path ="C:/R - Workspace/IML"
-# data = paste0(path, "/train.csv")
-# cleaning_path = paste0(path, "/cleaning.R")
-# source(cleaning_path)
-path_train = "data/train.csv"
-source("cleaning_train.R")
+set.seed(123)
+ada_check = FALSE
+
+#Tell me if that works :)
+if(ada_check){
+  path = ""
+  source(cleaning_path_train)
+} else{
+  path ="C:/R - Workspace/IML"
+}
+
+data = paste0(path, "/train.csv")
+cleaning_path = paste0(path, "/cleaning.R")
+source(cleaning_path)
+# path_train = "data/train.csv"
+# source("cleaning_train.R")
 data = housing
 
 #LINEAR MODEL
 smp_size <- floor(0.75 * nrow(data))
-set.seed(123)
 train_ind <- sample(seq_len(nrow(data)), size = smp_size)
 
 #one-hot encoding
@@ -40,15 +50,20 @@ for (name in not_dummies) {
 }
 
 #removing one level for each dummy encoded categorical feature
+# AND: after analysis with imcdiag(model_lm) also need to drop another category for BsmtQual & BsmtFinType1, because 
+# both have a NO dummy in there and therefore we end up with perfect multicollinearity
+# in theory, the "no basement" should be captured by non-linear effects of the basement size (TotalBsmtSF), which linear regression cant do
+# therefore, for perfect modeling, we would probably have to add a basement dummy, indicating if a basement if exists or not
+# this is a good talking point, when comparing models :)
 reference_levels <- c("MSZoning.RH", "LotShape.IR2.5",
                       "Neighborhood.Blueste", "BldgType.Twnhs",
                       "RoofStyle.Other", "ExterQual.Fa", 
                       "ExterCond.3", "Foundation.Other",
-                      "BsmtQual.No", "BsmtFinType1.No", 
+                      "BsmtQual.No", "BsmtQual.TA", "BsmtFinType1.Unf", "BsmtFinType1.No",
                       "HeatingQC.Po", "KitchenQual.Fa",
                       "Functional.Maj", "FireplaceQu.No",
-                      "SaleType.Other", "SaleCondition.Family",
-                      "SeasonSold.a", "porch_type.no")
+                      "SaleType.Other", "SaleCondition.Other",
+                      "SeasonSold.w", "porch_type.no", "Electrical.SBrkr")
 trsf <- select(trsf, -reference_levels)
 
 #75/25 train/test split
@@ -59,18 +74,25 @@ train_y <- train$SalePrice
 test_X <- select(test, -SalePrice)
 test_y <- test$SalePrice
 
+
+
 #linear model without interactions
 model_lm <- lm(SalePrice~., data = train)
 summary(model_lm)
+
+
+
 predictions_lm <- predict(model_lm, test_X)
 
 rmse_lm <- rmse(test_y, predictions_lm)
 rmse_lm
-#rmse of 29486.5
+#rmse of 29438.02
 rmsle_lm <- rmsle(test_y, predictions_lm)
 rmsle_lm
-#rmsle 0.1546733
+#rmsle 0.1541895
 
+saveRDS(model_lm, paste0(path, "/results/linear_regression.rds"))
+saveRDS(train, paste0(path, "/results/train_linear_regression.rds"))
 #LASSO
 #uses the same dummy encoding as lm
 

@@ -485,4 +485,6 @@ housing = housing %>% mutate(PavedDrive = ifelse(PavedDrive == 2, 1,0 ))
 #housing$Remod = as.numeric(housing$Remod)
 #housing$pool = as.numeric(housing$pool)
 
+ggplot(housing, aes( BsmtFinType1, ..count..)) + geom_bar(aes(fill = BsmtQual  ), position = "dodge") 
+
 print(str(housing))

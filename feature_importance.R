@@ -21,6 +21,7 @@ training_data = readRDS(paste0(path, "/results/training_data.rds"))
 
 #------------------------------------------
 #Shap Feature Importance
+set.seed(123)
 shap_values <- shap.values(xgb_model = xgmodel$learner.model, X_train = select(training_data, - SalePrice))
 
 shap_values$shap_score = shap_values$shap_score %>% select(sort(current_vars()))
@@ -33,20 +34,20 @@ list_categories = c(c("MSZoning", "MSZoning.C..all.", "MSZoning.RM"),
                     c("BldgType","BldgType.1Fam","BldgType.TwnhsE"),
                     c("BsmtFinType1","BsmtFinType1.ALQ","BsmtFinType1.Unf"),
                     c("BsmtQual","BsmtQual.Ex","BsmtQual.TA"),
-                    c("Electrical","Electrical.Fuse.or.Mix","Electrical.SBrkr"),
-                    c("ExterCond","ExterCond.1","ExterCond.3"),
+                    #c("Electrical","Electrical.Fuse.or.Mix","Electrical.SBrkr"),
+                    c("ExterCond","ExterCond.1","ExterCond.2"),
                     c("ExterQual","ExterQual.Ex","ExterQual.TA"),
                     c("FireplaceQu","FireplaceQu.AA","FireplaceQu.TA"),
                     c("Foundation","Foundation.BrkTil","Foundation.PConc"),
-                    c("Functional","Functional.Maj","Functional.Typ"),
+                    c("Functional","Functional.Min","Functional.Typ"),
                     c("HeatingQC","HeatingQC.Ex","HeatingQC.TA"),
                     c("KitchenQual","KitchenQual.Ex","KitchenQual.TA"),
                     c("Neighborhood","Neighborhood.Blmngtn","Neighborhood.Veenker"),
                     c("porch_type","porch_type.enclosed_porch","porch_type.wood_deck"),
-                    c("RoofStyle","RoofStyle.Gable","RoofStyle.Other"),
+                    c("RoofStyle","RoofStyle.Gable","RoofStyle.Hip"),
                     c("SaleCondition","SaleCondition.Abnorml","SaleCondition.Partial"),
                     c("SaleType","SaleType.COD","SaleType.WD"),
-                    c("SeasonSold","SeasonSold.a","SeasonSold.w")
+                    c("SeasonSold","SeasonSold.a","SeasonSold.su")
                     )
 
 for(i in seq(from=1, to=length(list_categories), by=3)){
@@ -79,49 +80,53 @@ shap_values <- shap.values(xgb_model = xgmodel$learner.model, X_train = select(t
 shap_long <- shap.prep(shap_contrib = shap_values$shap_score, X_train = select(training_data, - SalePrice))
 p2 = shap.plot.summary(shap_long)
 p2
-ggsave(filename = paste0(path, "/results/SHAP_summary.jpg"), plot = p2)
+ggsave(filename = paste0(path, "/results/SHAP_summary_2.jpg"), plot = p2)
 
-shap.plot.summary.wrap1(model = xgmodel$learner.model, X =  select(training_data, - SalePrice), top_n = 6, dilute = FALSE)
+shap.plot.summary.wrap1(model = xgmodel$learner.model, X =  select(training_data, - SalePrice), top_n = 10, dilute = FALSE)
+
+shap.summary_plot
+
 
 xgb.plot.shap(data = as.matrix(select(training_data, - SalePrice)), model = xgmodel$learner.model, top_n = 6)
 
 #------------------------------
 #Permutation Feature Importance   - NEW
+#USE RMSE instead of RMSLE, because through permutation negative values (especially later in regression) are possible
 f = function(task, model, pred, feats, extra.args) {
 
-  sqrt(sum(   ( log(pred$data$response + 1) - log(pred$data$truth + 1) )^2) /length(pred$data$response)  )
+  sqrt(sum(   ( pred$data$response - pred$data$truth  )^2) /length(pred$data$response)  )
 }
 meas = makeMeasure(id = "RMSLE", minimize = TRUE,
             properties = c("regr", "response"), fun = f, extra.args = list())
-
-imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 50, measures  = meas,
+set.seed(123)
+imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 120, measures  = meas,
                         features = list(
-                          MSZoning = c("MSZoning.RL", "MSZoning.RM", "MSZoning.C..all.", "MSZoning.FV", "MSZoning.RH"),
-                          LotShape = c("LotShape.Reg", "LotShape.IR1", "LotShape.IR2.5"),
+                          MSZoning = c("MSZoning.RL", "MSZoning.RM", "MSZoning.C..all.", "MSZoning.FV"),
+                          LotShape = c("LotShape.Reg", "LotShape.IR1"),
                           Neighborhood = c("Neighborhood.CollgCr", "Neighborhood.Veenker", "Neighborhood.Crawfor", "Neighborhood.NoRidge",
                                            "Neighborhood.Mitchel", "Neighborhood.Somerst", "Neighborhood.NWAmes", "Neighborhood.OldTown",
                                             "Neighborhood.BrkSide", "Neighborhood.Sawyer", "Neighborhood.NridgHt", "Neighborhood.NAmes",
                                            "Neighborhood.SawyerW", "Neighborhood.IDOTRR", "Neighborhood.MeadowV", "Neighborhood.Edwards",
                                            "Neighborhood.Timber", "Neighborhood.Gilbert", "Neighborhood.StoneBr", "Neighborhood.ClearCr",
-                                           "Neighborhood.NPkVill", "Neighborhood.Blmngtn", "Neighborhood.BrDale", "Neighborhood.SWISU", "Neighborhood.Blueste"),
+                                           "Neighborhood.NPkVill", "Neighborhood.Blmngtn", "Neighborhood.BrDale", "Neighborhood.SWISU"),
                           numb_add_flr = "numb_add_flr",
                           pool = "pool",
-                          BldgType = c("BldgType.1Fam", "BldgType.2fmCon", "BldgType.Duplex", "BldgType.TwnhsE", "BldgType.Twnhs"),
-                          RoofStyle = c("RoofStyle.Gable", "RoofStyle.Hip", "RoofStyle.Other"),
-                          ExterQual = c("ExterQual.Gd", "ExterQual.TA", "ExterQual.Ex", "ExterQual.Fa"),
-                          ExterCond = c("ExterCond.2", "ExterCond.3", "ExterCond.1"),
-                          Foundation = c("Foundation.PConc", "Foundation.CBlock", "Foundation.BrkTil", "Foundation.Other"),
-                          BsmtQual = c("BsmtQual.Gd", "BsmtQual.TA", "BsmtQual.Ex", "BsmtQual.Fa", "BsmtQual.No"),
-                          BsmtFinType1 = c("BsmtFinType1.Unf", "BsmtFinType1.Rec", "BsmtFinType1.BLQ", "BsmtFinType1.LwQ", "BsmtFinType1.No"),
-                          HeatingQC = c("HeatingQC.Ex", "HeatingQC.Gd", "HeatingQC.TA", "HeatingQC.Fa", "HeatingQC.Po"),
-                          Electrical = c("Electrical.SBrkr", "Electrical.Fuse.or.Mix"),
-                          KitchenQual = c("KitchenQual.Gd", "KitchenQual.TA", "KitchenQual.Ex", "KitchenQual.Fa"),
-                          Functional = c("Functional.Typ", "Functional.Min", "Functional.Maj" ),
-                          FireplaceQu = c("FireplaceQu.TA", "FireplaceQu.AA", "FireplaceQu.BA", "FireplaceQu.No"),
-                          SaleType = c("SaleType.WD", "SaleType.New", "SaleType.COD", "SaleType.Other"),
-                          SaleCondition = c("SaleCondition.Normal", "SaleCondition.Abnorml" ,"SaleCondition.Partial", "SaleCondition.Other", "SaleCondition.Family"),
-                          SeasonSold = c("SeasonSold.w", "SeasonSold.sp", "SeasonSold.su", "SeasonSold.a"),
-                          porch_type = c("porch_type.enclosed_porch", "porch_type.multiple", "porch_type.no", "porch_type.open_porch", 
+                          BldgType = c("BldgType.1Fam", "BldgType.2fmCon", "BldgType.Duplex", "BldgType.TwnhsE"),
+                          RoofStyle = c("RoofStyle.Gable", "RoofStyle.Hip"),
+                          ExterQual = c("ExterQual.Gd", "ExterQual.TA", "ExterQual.Ex"),
+                          ExterCond = c("ExterCond.2", "ExterCond.1"),
+                          Foundation = c("Foundation.PConc", "Foundation.CBlock", "Foundation.BrkTil"),
+                          BsmtQual = c("BsmtQual.Gd", "BsmtQual.TA", "BsmtQual.Ex", "BsmtQual.Fa"),
+                          BsmtFinType1 = c("BsmtFinType1.GLQ", "BsmtFinType1.ALQ", "BsmtFinType1.Unf", "BsmtFinType1.Rec", "BsmtFinType1.BLQ", "BsmtFinType1.LwQ"),
+                          HeatingQC = c("HeatingQC.Ex", "HeatingQC.Gd", "HeatingQC.TA", "HeatingQC.Fa"),
+                          Electrical = "Electrical.Fuse.or.Mix",
+                          KitchenQual = c("KitchenQual.Gd", "KitchenQual.TA", "KitchenQual.Ex"),
+                          Functional = c("Functional.Typ", "Functional.Min" ),
+                          FireplaceQu = c("FireplaceQu.TA", "FireplaceQu.AA", "FireplaceQu.BA"),
+                          SaleType = c("SaleType.WD", "SaleType.New", "SaleType.COD"),
+                          SaleCondition = c("SaleCondition.Normal", "SaleCondition.Abnorml" ,"SaleCondition.Partial", "SaleCondition.Family"),
+                          SeasonSold = c("SeasonSold.sp", "SeasonSold.su", "SeasonSold.a"),
+                          porch_type = c("porch_type.enclosed_porch", "porch_type.multiple", "porch_type.open_porch", 
                                          "porch_type.screen_porch", "porch_type.three_s_porch", "porch_type.wood_deck"),
                           LotArea = "LotArea",
                           YearBuilt = "YearBuilt",
@@ -145,7 +150,7 @@ plotting_data = summary(imp)
 
 p3<-ggplot(data=plotting_data, aes(x=RMSLE, y=reorder(features, RMSLE))) +
   geom_bar(stat="identity", fill="steelblue") +
-  xlab("Permutation Feature Importance (RMSLE)") +
+  xlab("Permutation Feature Importance (RMSE)") +
   ylab("Feature")
 #geom_text(aes(label=abs_value), vjust=0, size=2)
 p3
@@ -188,7 +193,8 @@ ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), p
 #--------------------------------
 #Interaction strength
 mod <- Predictor$new(xgmodel, data = select(training_data, - SalePrice), y = select(training_data, SalePrice))
-ia <- Interaction$new(mod,  grid.size = 50)
+set.seed(123)
+ia <- Interaction$new(mod, grid.size = 80)
 
 
 
@@ -208,3 +214,87 @@ plot(ia)
 
 
 #---------------------------------
+#Regression - Shap Feature Importance
+lm = readRDS(paste0(path, "/results/linear_regression.rds"))
+training_data_linear_reg = readRDS(paste0(path, "/results/train_linear_regression.rds"))
+
+#Shap Feature Importance
+#No package available there
+library(shapper)
+
+ive_rf = individual_variable_effect(x = lm, data = training_data_linear_reg, new_observation = training_data_linear_reg[1,])
+plot(ive_rf)
+
+#Permutation Feasure Importance  
+f = function(truth, response) {
+  sqrt(sum(   ( truth  - response )^2) /length(truth)  )
+}
+set.seed(123)
+imp = featureImportance(object = lm, data = training_data_linear_reg, n.feat.perm = 30, measures  = c("RMSE" =  f), target="SalePrice",
+                        features = list(
+                          MSZoning = c("MSZoning.RL", "MSZoning.RM", "MSZoning.C..all.", "MSZoning.FV"),
+                          LotShape = c("LotShape.Reg", "LotShape.IR1"),
+                          Neighborhood = c("Neighborhood.CollgCr", "Neighborhood.Veenker", "Neighborhood.Crawfor", "Neighborhood.NoRidge",
+                                           "Neighborhood.Mitchel", "Neighborhood.Somerst", "Neighborhood.NWAmes", "Neighborhood.OldTown",
+                                           "Neighborhood.BrkSide", "Neighborhood.Sawyer", "Neighborhood.NridgHt", "Neighborhood.NAmes",
+                                           "Neighborhood.SawyerW", "Neighborhood.IDOTRR", "Neighborhood.MeadowV", "Neighborhood.Edwards",
+                                           "Neighborhood.Timber", "Neighborhood.Gilbert", "Neighborhood.StoneBr", "Neighborhood.ClearCr",
+                                           "Neighborhood.NPkVill", "Neighborhood.Blmngtn", "Neighborhood.BrDale", "Neighborhood.SWISU"),
+                          numb_add_flr = "numb_add_flr",
+                          pool = "pool",
+                          BldgType = c("BldgType.1Fam", "BldgType.2fmCon", "BldgType.Duplex", "BldgType.TwnhsE"),
+                          RoofStyle = c("RoofStyle.Gable", "RoofStyle.Hip"),
+                          ExterQual = c("ExterQual.Gd", "ExterQual.TA", "ExterQual.Ex"),
+                          ExterCond = c("ExterCond.2", "ExterCond.1"),
+                          Foundation = c("Foundation.PConc", "Foundation.CBlock", "Foundation.BrkTil"),
+                          BsmtQual = c("BsmtQual.Gd", "BsmtQual.Ex", "BsmtQual.Fa"),
+                          BsmtFinType1 = c("BsmtFinType1.GLQ", "BsmtFinType1.ALQ", "BsmtFinType1.Rec", "BsmtFinType1.BLQ", "BsmtFinType1.LwQ"),
+                          HeatingQC = c("HeatingQC.Ex", "HeatingQC.Gd", "HeatingQC.TA", "HeatingQC.Fa"),
+                          Electrical = "Electrical.Fuse.or.Mix",
+                          
+                          KitchenQual = c("KitchenQual.Gd", "KitchenQual.TA", "KitchenQual.Ex"),
+                          Functional = c("Functional.Typ", "Functional.Min" ),
+                          FireplaceQu = c("FireplaceQu.TA", "FireplaceQu.AA", "FireplaceQu.BA"),
+                          SaleType = c("SaleType.WD", "SaleType.New", "SaleType.COD"),
+                          SaleCondition = c("SaleCondition.Normal", "SaleCondition.Abnorml" ,"SaleCondition.Partial", "SaleCondition.Family"),
+                          SeasonSold = c("SeasonSold.sp", "SeasonSold.su", "SeasonSold.a"),
+                          porch_type = c("porch_type.enclosed_porch", "porch_type.multiple", "porch_type.open_porch",
+                                         "porch_type.screen_porch", "porch_type.three_s_porch", "porch_type.wood_deck"),
+
+
+                          LotArea = "LotArea",
+                          YearBuilt = "YearBuilt",
+                          TotalBsmtSF = "TotalBsmtSF",
+                          GrLivArea = "GrLivArea",
+                          porch_area = "porch_area",
+                          FullBath = "FullBath",
+                          HalfBath = "HalfBath",
+                          BedroomAbvGr = "BedroomAbvGr",
+                          KitchenAbvGr = "KitchenAbvGr",
+                          GarageCars = "GarageCars",
+                          OverallQual = "OverallQual",
+                          OverallCond = "OverallCond",
+                          CentralAir = "CentralAir",
+                          PavedDrive = "PavedDrive",
+                          Remod = "Remod"
+                        ))
+plotting_data = summary(imp)
+
+p4<-ggplot(data=plotting_data, aes(x=RMSE, y=reorder(features, RMSE))) +
+  geom_bar(stat="identity", fill="steelblue") +
+  xlab("Permutation Feature Importance (RMSE)") +
+  ylab("Feature")
+#geom_text(aes(label=abs_value), vjust=0, size=2)
+p4
+ggsave(filename = paste0(path, "/results/permutation_feature_importance_linear_regression.jpg"), plot = p4)
+
+#T values Feasure Importance  
+plotting_data = enframe(summary(lm)[["coefficients"]][, "t value"]) %>% slice(2:n) %>% mutate(value = abs(value))
+
+p5<-ggplot(data=plotting_data, aes(x=value, y=reorder(name, value))) +
+  geom_bar(stat="identity", fill="steelblue") +
+  xlab("t-value Feature Importance") +
+  ylab("Feature")
+p5
+#here we have the same problem again with dummies for our categories...
+
