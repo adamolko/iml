@@ -405,7 +405,7 @@ housing$OverallQual = as.numeric(housing$OverallQual)
 housing$OverallCond = as.numeric(housing$OverallCond)
 
 #4) Get a factor if remodeling was done or not and drop remodeling year
-housing = housing %>% mutate(Remod = ifelse(YearBuilt == YearRemodAdd, 1, 0))
+housing = housing %>% mutate(Remod = ifelse(YearBuilt == YearRemodAdd, 0, 1))
 #housing$Remod = as.factor(housing$Remod)
 housing = select(housing, -YearRemodAdd)
 
