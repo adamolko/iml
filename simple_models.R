@@ -20,7 +20,7 @@ if(ada_check){
   path = ""
   source(cleaning_path_train)
 } else{
-  path ="C:/R - Workspace/IML"
+  path ="D:/R - Workspace/IML"
 }
 
 data = paste0(path, "/train.csv")
@@ -40,9 +40,8 @@ not_dummies <- c("LotArea", "YearBuilt", "TotalBsmtSF",
                  "FullBath", "HalfBath", "BedroomAbvGr",
                  "KitchenAbvGr", "GarageCars", "OverallQual", 
                  "OverallCond", "CentralAir", "PavedDrive",
-                 "pool", "Remod")
-
-dummies <- select(data, -not_dummies)
+                 "pool", "Remod", "ExterQual", "ExterCond", "BsmtQual", "HeatingQC",  "KitchenQual", "BsmtFinType1", "FireplaceQu")
+dummies <- select(train, -all_of(not_dummies))
 dmy <- dummyVars(" ~ .", data = dummies)
 trsf <- data.frame(predict(dmy, newdata = dummies))
 for (name in not_dummies) {
@@ -57,11 +56,8 @@ for (name in not_dummies) {
 # this is a good talking point, when comparing models :)
 reference_levels <- c("MSZoning.RH", "LotShape.IR2.5",
                       "Neighborhood.Blueste", "BldgType.Twnhs",
-                      "RoofStyle.Other", "ExterQual.Fa", 
-                      "ExterCond.3", "Foundation.Other",
-                      "BsmtQual.No", "BsmtQual.TA", "BsmtFinType1.Unf", "BsmtFinType1.No",
-                      "HeatingQC.Po", "KitchenQual.Fa",
-                      "Functional.Maj", "FireplaceQu.No",
+                      "RoofStyle.Other", "Foundation.Other",
+                      "Functional.Maj",
                       "SaleType.Other", "SaleCondition.Other",
                       "SeasonSold.w", "porch_type.no", "Electrical.SBrkr")
 trsf <- select(trsf, -reference_levels)
@@ -86,10 +82,10 @@ predictions_lm <- predict(model_lm, test_X)
 
 rmse_lm <- rmse(test_y, predictions_lm)
 rmse_lm
-#rmse of 29438.02
+#rmse of 34502.81
 rmsle_lm <- rmsle(test_y, predictions_lm)
 rmsle_lm
-#rmsle 0.1541895
+#rmsle 0.1979461
 
 saveRDS(model_lm, paste0(path, "/results/linear_regression.rds"))
 saveRDS(train, paste0(path, "/results/train_linear_regression.rds"))

@@ -323,9 +323,11 @@ housing$SaleType <- factor(housing$SaleType, levels=c("WD", "New", "COD", "ConLD
 #Electrical 
 housing$Electrical <- factor(housing$Electrical, levels=c("SBrkr", "FuseF", "FuseA", "FuseP", "Mix"),
                              labels=c("SBrkr", "Fuse or Mix", "Fuse or Mix", "Fuse or Mix", "Fuse or Mix"))
-#FireplaceQu: leave categories TA - average, AA - above average, BA - below average, No - no fireplace
+#FireplaceQu: Change categories to numerical, since ratings
 housing$FireplaceQu <- factor(housing$FireplaceQu, levels=c("TA", "Gd", "Fa", "Ex", "Po", "No"),
-                              labels=c("TA", "AA", "BA", "AA", "BA", "No"))
+                              labels=c("3", "4", "2", "5", "1", "0"))
+housing$FireplaceQu  = as.numeric(levels(housing$FireplaceQu))[housing$FireplaceQu]
+
 #Functional: can collapse by degree of deduction (moderate went to minimal, severe went to major
 housing$Functional <- factor(housing$Functional, levels=c("Typ", "Min1", "Maj1", "Min2", "Mod", "Maj2", "Sev"),
                              labels=c("Typ", "Min", "Maj", "Min", "Min", "Maj", "Maj"))
@@ -401,8 +403,13 @@ housing = select(housing, -Exterior1st, -Exterior2nd)
 #                               labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
 # housing$OverallCond <- factor(housing$OverallCond, levels=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
 #                               labels=c("1", "1", "2", "2", "3", "3", "4", "4", "5",  "5"))
-housing$OverallQual = as.numeric(housing$OverallQual)
-housing$OverallCond = as.numeric(housing$OverallCond)
+
+# ##REMEMBER THIS LINE FOR REPORT, IT COMPLETELY FUCKS UP OUR FACTOR
+#housing$OverallQual = as.numeric(housing$OverallQual) 
+#housing$OverallCond = as.numeric(housing$OverallCond)
+housing$OverallQual  = as.numeric(levels(housing$OverallQual))[housing$OverallQual]
+housing$OverallCond  = as.numeric(levels(housing$OverallCond))[housing$OverallCond]
+
 
 #4) Get a factor if remodeling was done or not and drop remodeling year
 housing = housing %>% mutate(Remod = ifelse(YearBuilt == YearRemodAdd, 0, 1))
@@ -423,11 +430,16 @@ housing = select(housing, -Heating)
 summary(housing$GarageQual) #almost no variation in here as well
 housing = select(housing, -GarageQual)
 
-#8) ExterCond: collapse that, because not enough variation
+#8) ExterCond: collapse that, because not enough variation & make numerical out of it
 summary(housing$ExterCond)
 housing$ExterCond <- factor(housing$ExterCond, levels=c(  "TA",   "Gd",   "Fa",   "Po",   "Ex"  ),
                             labels=c( "2",   "3",   "1",   "1",   "3"  ) )
+housing$ExterCond  = as.numeric(levels(housing$ExterCond))[housing$ExterCond]
 summary(housing$ExterCond)
+#And to the same for ExterQual:
+housing$ExterQual <- factor(housing$ExterQual, levels=c(  "TA",   "Gd",   "Fa",   "Po",   "Ex"  ),
+                            labels=c( "3",   "4",   "2",   "1",   "5"  ) )
+housing$ExterQual  = as.numeric(levels(housing$ExterQual))[housing$ExterQual]
 
 #9) SaleCondition: collapse that, because not enough variation
 #For now not by too much
@@ -482,6 +494,23 @@ housing$CentralAir = as.numeric(housing$CentralAir)
 housing = housing %>% mutate(CentralAir = ifelse(CentralAir == 2,1,0))
 housing$PavedDrive = as.numeric(housing$PavedDrive)
 housing = housing %>% mutate(PavedDrive = ifelse(PavedDrive == 2, 1,0 ))
+
+
+housing$KitchenQual <- factor(housing$KitchenQual, levels=c(  "TA",   "Gd",   "Fa",   "Po",   "Ex"  ),
+                            labels=c( "3",   "4",   "2",   "1",   "5"  ) )
+housing$KitchenQual  = as.numeric(levels(housing$KitchenQual))[housing$KitchenQual]
+housing$HeatingQC <- factor(housing$HeatingQC, levels=c(  "TA",   "Gd",   "Fa",   "Po",   "Ex"  ),
+                              labels=c( "3",   "4",   "2",   "1",   "5"  ) )
+housing$HeatingQC  = as.numeric(levels(housing$HeatingQC))[housing$HeatingQC]
+
+housing$BsmtQual <- factor(housing$BsmtQual, levels=c(  "TA",   "Gd",   "Fa",   "Po",   "Ex", "No" ),
+                            labels=c( "3",   "4",   "2",   "1",   "5", "0"  ) )
+housing$BsmtQual  = as.numeric(levels(housing$BsmtQual))[housing$BsmtQual]
+
+housing$BsmtFinType1 <- factor(housing$BsmtFinType1, levels=c(  "GLQ",   "ALQ",   "BLQ",   "Rec",   "LwQ", "Unf", "No" ),
+                           labels=c( "6","5",   "4",   "3",   "2",   "1", "0"  ) )
+housing$BsmtFinType1  = as.numeric(levels(housing$BsmtFinType1))[housing$BsmtFinType1]
+
 #housing$Remod = as.numeric(housing$Remod)
 #housing$pool = as.numeric(housing$pool)
 

@@ -12,7 +12,7 @@ if(ada_check){
   path = ""
   source(cleaning_path_train)
 } else{
-  path ="C:/R - Workspace/IML"
+  path ="D:/R - Workspace/IML"
 }
 
 #get the model & the training data first
@@ -32,16 +32,16 @@ shap_values$shap_score = shap_values$shap_score %>% select(sort(current_vars()))
 list_categories = c(c("MSZoning", "MSZoning.C..all.", "MSZoning.RM"),
                     c("LotShape","LotShape.IR1","LotShape.Reg"),
                     c("BldgType","BldgType.1Fam","BldgType.TwnhsE"),
-                    c("BsmtFinType1","BsmtFinType1.ALQ","BsmtFinType1.Unf"),
-                    c("BsmtQual","BsmtQual.Ex","BsmtQual.TA"),
+                    #c("BsmtFinType1","BsmtFinType1.ALQ","BsmtFinType1.Unf"),
+                    #c("BsmtQual","BsmtQual.Ex","BsmtQual.TA"),
                     #c("Electrical","Electrical.Fuse.or.Mix","Electrical.SBrkr"),
-                    c("ExterCond","ExterCond.1","ExterCond.2"),
-                    c("ExterQual","ExterQual.Ex","ExterQual.TA"),
-                    c("FireplaceQu","FireplaceQu.AA","FireplaceQu.TA"),
+                    #c("ExterCond","ExterCond.1","ExterCond.2"),
+                    #c("ExterQual","ExterQual.Ex","ExterQual.TA"),
+                    #c("FireplaceQu","FireplaceQu.AA","FireplaceQu.TA"),
                     c("Foundation","Foundation.BrkTil","Foundation.PConc"),
                     c("Functional","Functional.Min","Functional.Typ"),
-                    c("HeatingQC","HeatingQC.Ex","HeatingQC.TA"),
-                    c("KitchenQual","KitchenQual.Ex","KitchenQual.TA"),
+                   # c("HeatingQC","HeatingQC.Ex","HeatingQC.TA"),
+                    #c("KitchenQual","KitchenQual.Ex","KitchenQual.TA"),
                     c("Neighborhood","Neighborhood.Blmngtn","Neighborhood.Veenker"),
                     c("porch_type","porch_type.enclosed_porch","porch_type.wood_deck"),
                     c("RoofStyle","RoofStyle.Gable","RoofStyle.Hip"),
@@ -82,7 +82,7 @@ p2 = shap.plot.summary(shap_long)
 p2
 ggsave(filename = paste0(path, "/results/SHAP_summary_2.jpg"), plot = p2)
 
-shap.plot.summary.wrap1(model = xgmodel$learner.model, X =  select(training_data, - SalePrice), top_n = 10, dilute = FALSE)
+shap.plot.summary.wrap1(model = xgmodel$learner.model, X =  select(training_data, - SalePrice), top_n = 10, dilute = 2)
 
 shap.summary_plot
 
@@ -99,7 +99,7 @@ f = function(task, model, pred, feats, extra.args) {
 meas = makeMeasure(id = "RMSLE", minimize = TRUE,
             properties = c("regr", "response"), fun = f, extra.args = list())
 set.seed(123)
-imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 120, measures  = meas,
+imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 50, measures  = meas,
                         features = list(
                           MSZoning = c("MSZoning.RL", "MSZoning.RM", "MSZoning.C..all.", "MSZoning.FV"),
                           LotShape = c("LotShape.Reg", "LotShape.IR1"),
@@ -113,16 +113,16 @@ imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 120, measur
                           pool = "pool",
                           BldgType = c("BldgType.1Fam", "BldgType.2fmCon", "BldgType.Duplex", "BldgType.TwnhsE"),
                           RoofStyle = c("RoofStyle.Gable", "RoofStyle.Hip"),
-                          ExterQual = c("ExterQual.Gd", "ExterQual.TA", "ExterQual.Ex"),
-                          ExterCond = c("ExterCond.2", "ExterCond.1"),
+                          ExterQual = "ExterQual",
+                          ExterCond = "ExterCond",
                           Foundation = c("Foundation.PConc", "Foundation.CBlock", "Foundation.BrkTil"),
-                          BsmtQual = c("BsmtQual.Gd", "BsmtQual.TA", "BsmtQual.Ex", "BsmtQual.Fa"),
-                          BsmtFinType1 = c("BsmtFinType1.GLQ", "BsmtFinType1.ALQ", "BsmtFinType1.Unf", "BsmtFinType1.Rec", "BsmtFinType1.BLQ", "BsmtFinType1.LwQ"),
-                          HeatingQC = c("HeatingQC.Ex", "HeatingQC.Gd", "HeatingQC.TA", "HeatingQC.Fa"),
+                          BsmtQual = "BsmtQual",
+                          BsmtFinType1 = "BsmtFinType1",
+                          HeatingQC = "HeatingQC",
                           Electrical = "Electrical.Fuse.or.Mix",
-                          KitchenQual = c("KitchenQual.Gd", "KitchenQual.TA", "KitchenQual.Ex"),
+                          KitchenQual = "KitchenQual",
                           Functional = c("Functional.Typ", "Functional.Min" ),
-                          FireplaceQu = c("FireplaceQu.TA", "FireplaceQu.AA", "FireplaceQu.BA"),
+                          FireplaceQu = "FireplaceQu" ,
                           SaleType = c("SaleType.WD", "SaleType.New", "SaleType.COD"),
                           SaleCondition = c("SaleCondition.Normal", "SaleCondition.Abnorml" ,"SaleCondition.Partial", "SaleCondition.Family"),
                           SeasonSold = c("SeasonSold.sp", "SeasonSold.su", "SeasonSold.a"),
@@ -191,14 +191,22 @@ ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), p
 # ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), plot = p3)
 
 #--------------------------------
-#Interaction strength
+#Interaction strength - H -statistic
 mod <- Predictor$new(xgmodel, data = select(training_data, - SalePrice), y = select(training_data, SalePrice))
 set.seed(123)
-ia <- Interaction$new(mod, grid.size = 80)
-
-
-
+ia <- Interaction$new(mod, grid.size = 50)
 plot(ia)
+
+#For GrLivArea specifically:
+set.seed(123)
+ia <- Interaction$new(mod, grid.size = 30, feature = "GrLivArea")
+plot(ia)
+
+#For OverallQual specifically:
+set.seed(123)
+ia <- Interaction$new(mod, grid.size = 30, feature = "OverallQual")
+plot(ia)
+
 #Group the effect of the dummies for each category together?
 
 #If yes, then:
@@ -244,24 +252,21 @@ imp = featureImportance(object = lm, data = training_data_linear_reg, n.feat.per
                           pool = "pool",
                           BldgType = c("BldgType.1Fam", "BldgType.2fmCon", "BldgType.Duplex", "BldgType.TwnhsE"),
                           RoofStyle = c("RoofStyle.Gable", "RoofStyle.Hip"),
-                          ExterQual = c("ExterQual.Gd", "ExterQual.TA", "ExterQual.Ex"),
-                          ExterCond = c("ExterCond.2", "ExterCond.1"),
+                          ExterQual = "ExterQual",
+                          ExterCond = "ExterCond",
                           Foundation = c("Foundation.PConc", "Foundation.CBlock", "Foundation.BrkTil"),
-                          BsmtQual = c("BsmtQual.Gd", "BsmtQual.Ex", "BsmtQual.Fa"),
-                          BsmtFinType1 = c("BsmtFinType1.GLQ", "BsmtFinType1.ALQ", "BsmtFinType1.Rec", "BsmtFinType1.BLQ", "BsmtFinType1.LwQ"),
-                          HeatingQC = c("HeatingQC.Ex", "HeatingQC.Gd", "HeatingQC.TA", "HeatingQC.Fa"),
+                          BsmtQual = "BsmtQual",
+                          BsmtFinType1 = "BsmtFinType1",
+                          HeatingQC = "HeatingQC",
                           Electrical = "Electrical.Fuse.or.Mix",
-                          
-                          KitchenQual = c("KitchenQual.Gd", "KitchenQual.TA", "KitchenQual.Ex"),
+                          KitchenQual = "KitchenQual",
                           Functional = c("Functional.Typ", "Functional.Min" ),
-                          FireplaceQu = c("FireplaceQu.TA", "FireplaceQu.AA", "FireplaceQu.BA"),
+                          FireplaceQu = "FireplaceQu" ,
                           SaleType = c("SaleType.WD", "SaleType.New", "SaleType.COD"),
                           SaleCondition = c("SaleCondition.Normal", "SaleCondition.Abnorml" ,"SaleCondition.Partial", "SaleCondition.Family"),
                           SeasonSold = c("SeasonSold.sp", "SeasonSold.su", "SeasonSold.a"),
-                          porch_type = c("porch_type.enclosed_porch", "porch_type.multiple", "porch_type.open_porch",
+                          porch_type = c("porch_type.enclosed_porch", "porch_type.multiple", "porch_type.open_porch", 
                                          "porch_type.screen_porch", "porch_type.three_s_porch", "porch_type.wood_deck"),
-
-
                           LotArea = "LotArea",
                           YearBuilt = "YearBuilt",
                           TotalBsmtSF = "TotalBsmtSF",
@@ -296,5 +301,6 @@ p5<-ggplot(data=plotting_data, aes(x=value, y=reorder(name, value))) +
   xlab("t-value Feature Importance") +
   ylab("Feature")
 p5
+ggsave(filename = paste0(path, "/results/t_value_feature_importance_linear_regression.jpg"), plot = p5)
 #here we have the same problem again with dummies for our categories...
 

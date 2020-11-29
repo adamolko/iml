@@ -1,9 +1,10 @@
+library(Hmisc)
 library(xgboost)
 library(caret)
 library(Metrics)
+library(plyr)
 library(dplyr)
 library(readr)
-library(plyr)
 library(glmnet)
 library(tidyverse)
 library(forcats)
@@ -28,7 +29,7 @@ if(ada_check){
   cleaning_path_train = paste0(path, "/cleaning_train.R")
   source(cleaning_path_train)
 } else{
-  path ="C:/R - Workspace/IML"
+  path ="D:/R - Workspace/IML"
   path_test = paste0(path, "/data/test.csv")
   path_train = paste0(path, "/data/train.csv")
   cleaning_path_test = paste0(path, "/cleaning_test.R")
@@ -43,7 +44,7 @@ not_dummies <- c("LotArea", "YearBuilt", "TotalBsmtSF",
               "FullBath", "HalfBath", "BedroomAbvGr",
               "KitchenAbvGr", "GarageCars", "OverallQual", 
               "OverallCond", "CentralAir", "PavedDrive",
-              "pool", "Remod")
+              "pool", "Remod", "ExterQual", "ExterCond", "BsmtQual", "HeatingQC",  "KitchenQual", "BsmtFinType1", "FireplaceQu")
 dummies <- select(train, -all_of(not_dummies))
 
 dmy <- dummyVars(" ~ .", data = dummies)
@@ -56,11 +57,10 @@ for (name in not_dummies) {
 #for interpretation purposes, should drop one dummy for each categorical variable:
 reference_levels <- c("MSZoning.RH", "LotShape.IR2.5",
                       "Neighborhood.Blueste", "BldgType.Twnhs",
-                      "RoofStyle.Other", "ExterQual.Fa", 
-                      "ExterCond.3", "Foundation.Other",
-                      "BsmtQual.No", "BsmtFinType1.No",
-                      "HeatingQC.Po", "KitchenQual.Fa",
-                      "Functional.Maj", "FireplaceQu.No",
+                      "RoofStyle.Other",
+                      "Foundation.Other",
+                      
+                      "Functional.Maj",
                       "SaleType.Other", "SaleCondition.Other",
                       "SeasonSold.w", "porch_type.no", "Electrical.SBrkr")
 trsf <- select(trsf, -reference_levels)
