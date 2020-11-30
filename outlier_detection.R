@@ -69,7 +69,7 @@ g = ggplot(training_data, aes(x=GrLivArea, y=SalePrice, colour = GrLivArea < 355
   geom_point() + 
   scale_color_discrete(name="Living Area > 3551", labels=c("Yes", "No"))
 g
-ggsave(filename = paste0(path, "/results/scatter_for_influence.jpg"), plot = g)
+ggsave(filename = paste0(path, "/results/scatter_for_influence.jpg"), plot = g, dpi=450)
 
 ggplot(training_data, aes(x=GrLivArea, y=LotArea, colour = GrLivArea >= 623 & LotArea <2200 & porch_area < 543)) +
   geom_point()

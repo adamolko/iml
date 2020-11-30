@@ -29,7 +29,7 @@ if(ada_check){
   cleaning_path_train = paste0(path, "/cleaning_train.R")
   source(cleaning_path_train)
 } else{
-  path ="D:/R - Workspace/IML"
+  path ="C:/R - Workspace/IML"
   path_test = paste0(path, "/data/test.csv")
   path_train = paste0(path, "/data/train.csv")
   cleaning_path_test = paste0(path, "/cleaning_test.R")

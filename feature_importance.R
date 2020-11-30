@@ -12,7 +12,7 @@ if(ada_check){
   path = ""
   source(cleaning_path_train)
 } else{
-  path ="D:/R - Workspace/IML"
+  path ="C:/R - Workspace/IML"
 }
 
 #get the model & the training data first
