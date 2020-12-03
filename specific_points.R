@@ -71,37 +71,62 @@ ggsave(filename = paste0(path, "/results/SHAP_values_observation_low_quality.jpg
 #--------------------------------
 #Lets pick observation 2 and du further analysis
 
-
+#---------
 #LocalModel
 mod <- Predictor$new(xgmodel, data = training_data)
 # Explain the first instance of the dataset with the LocalModel method:
 point2
 #We need some explanation/reasoning/idea on how many features (k) to choose
+
+#Choose 10 for now
 local_model <- LocalModel$new(mod, x.interest = point2, k = 10)
 # Look at the results in a table
 local_model$results
 # Or as a plot
-plot(local_model)
-#My takeaway:
-#Local model does not provide good explanation for how we should increase/decrease features to increase sale price by 10%,
-#because prediction is off by ~25000, if we use between 2 and 20 features
-#Only when we use ALL our features, the prediction is close, but then we have no 
-#generalization (because fitting to only this one instance) and it's useless again...
+g1 = plot(local_model)
+g1
+ggsave(filename = paste0(path, "/results/Local_Model_prediction_k10.jpg"), plot = g1)
+#Choose 30 
+local_model <- LocalModel$new(mod, x.interest = point2, k = 30)
+local_model$results
+g2 = plot(local_model)
+g2
+ggsave(filename = paste0(path, "/results/Local_Model_prediction_k30.jpg"), plot = g2)
 
+#Choose 50 
+local_model <- LocalModel$new(mod, x.interest = point2, k = 50)
+local_model$results
+g3 = plot(local_model)
+g3
+ggsave(filename = paste0(path, "/results/Local_Model_prediction_k50.jpg"), plot = g3)
+
+#My takeaway:
+#Fidelity is low, if k chosen between 2 and 20 
+# ---> can't really use it for our question on how to change features to increase prediction
+# ---> but interpretation a lot easier, how prediction is made
+#Fidelity better, if we further increase k
+# ---> then we can use it, but: how good  is generalization then?
+# ---> interpretation of prediction also much worse
+
+
+#---------
 #Counterfactuals
-library(tidyverse)
 devtools::load_all("C:/R - Workspace/moc/counterfactuals", export_all = FALSE)
-#devtools::load_all("C:/R - Workspace/moc/iml", export_all = FALSE)
+devtools::load_all("C:/R - Workspace/moc/iml", export_all = FALSE)
 library("mlr")
 library("mlrCPO")
 library("ggplot2")
+library(tidyverse)
+library(partykit)
+library(trft)
+library(variables)
 best.params = readRDS("C:/R - Workspace/moc/saved_objects/best_configs.rds")
-
-
+set.seed(1234)
 pred = Predictor$new(xgmodel, data = training_data)
-point2 = training_data %>% filter( GrLivArea ==1699  & OverallQual < 5) #ID is 1187
-pred$predict(point2)
-
+ctr = partykit::ctree_control(maxdepth = 5L)
+pred$conditionals = fit_conditionals(pred$data$get.x(), ctrl = ctr)
+#point2 = training_data %>% filter( GrLivArea ==1699  & OverallQual < 5) #ID is 1187
+#pred$predict(point2)
 not_categories <- c("LotArea", "YearBuilt", "TotalBsmtSF",
                  "GrLivArea", "porch_area", "SalePrice")
 variables = colnames(training_data)
@@ -116,17 +141,6 @@ for(category in categories){
 }
 point2_other =  pred[["data"]][["X"]] %>% filter( GrLivArea ==1699  & OverallQual == 3) %>% add_column(SalePrice = 95000, .after = "porch_area")
 point2_other = as.data.frame(point2_other)
-
-system.time({credit.cf = Counterfactuals$new(predictor = pred, 
-                                             x.interest = point2_other, 
-                                             target = 120000, epsilon = 200, generations = list(mosmafs::mosmafsTermStagnationHV(10),
-                                                                                                 mosmafs::mosmafsTermGenerations(200)), 
-                                             mu = best.params$mu, 
-                                             p.mut = best.params$p.mut, p.rec = best.params$p.rec, 
-                                             p.mut.gen = best.params$p.mut.gen, 
-                                             p.mut.use.orig = best.params$p.mut.use.orig, 
-                                             p.rec.gen = best.params$p.rec.gen, initialization = "icecurve",
-                                             p.rec.use.orig = best.params$p.rec.use.orig)})
 
 
 
@@ -149,20 +163,22 @@ list_features_not_changing = c("MSZoning.RL" ,"MSZoning.RM" ,"MSZoning.C..all.",
                               
 
 counterfactual = Counterfactuals$new(pred, x.interest = point2_other,
-                                     target = 120000, generations = 10, track.infeas=TRUE, epsilon = 200,
+                                     target = 120000, generations = 20, track.infeas=TRUE, epsilon = 200,
                                      fixed.features = list_features_not_changing)
+# system.time({credit.cf = Counterfactuals$new(predictor = pred, 
+#                                              x.interest = point2_other, 
+#                                              target = 120000, epsilon = 200, generations = list(mosmafs::mosmafsTermStagnationHV(10),
+#                                                                                                  mosmafs::mosmafsTermGenerations(200)), 
+#                                              mu = best.params$mu, 
+#                                              p.mut = best.params$p.mut, p.rec = best.params$p.rec, 
+#                                              p.mut.gen = best.params$p.mut.gen, 
+#                                              p.mut.use.orig = best.params$p.mut.use.orig, 
+#                                              p.rec.gen = best.params$p.rec.gen, initialization = "icecurve",
+#                                              p.rec.use.orig = best.params$p.rec.use.orig)})
+
+
+actual_counterfactuals = counterfactual$results$counterfactuals
+diff_counterfactuals = counterfactual$results$counterfactuals.diff
 
 counterfactual$results
-# Number of counterfactuals
-xxx = credit.cf$results$counterfactuals
 
-nrow(credit.cf$results$counterfactuals)
-id = credit.cf$results$counterfactuals$dist.target == 0
-sum(id)
-
-# Focus counterfactuals that met target
-credit.cf$results$counterfactuals = credit.cf$results$counterfactuals[which(id), ]
-credit.cf$results$counterfactuals.diff = credit.cf$results$counterfactuals.diff[which(id), ]
-
-# Get relative frequency of feature changes
-credit.cf$get_frequency()
