@@ -135,8 +135,8 @@ for(category in categories){
   print(category)
   #pred[["data"]][["X"]][[category]] = as.integer( pred[["data"]][["X"]][[category]])
   pred[["data"]][["X"]][[category]] = as.factor(pred[["data"]][["X"]][[category]])
-  point2[[category]] = as.integer(point2[[category]])
-  #point2[[category]] = as.factor(point2[[category]])
+  #point2[[category]] = as.integer(point2[[category]])
+  point2[[category]] = as.factor(point2[[category]])
   
 }
 point2_other =  pred[["data"]][["X"]] %>% filter( GrLivArea ==1699  & OverallQual == 3) %>% add_column(SalePrice = 95000, .after = "porch_area")

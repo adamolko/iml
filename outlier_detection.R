@@ -73,3 +73,8 @@ ggsave(filename = paste0(path, "/results/scatter_for_influence.jpg"), plot = g, 
 
 ggplot(training_data, aes(x=GrLivArea, y=LotArea, colour = GrLivArea >= 623 & LotArea <2200 & porch_area < 543)) +
   geom_point()
+
+#TODO:
+#look at those observations in more detail (features!)
+
+training_data %>% filter(GrLivArea >= 3551)

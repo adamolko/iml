@@ -68,10 +68,14 @@ plotting_data = as_tibble(shap_values$mean_shap_score) %>% pivot_longer(cols = e
 p<-ggplot(data=plotting_data, aes(x=abs_value, y=reorder(name, abs_value))) +
   geom_bar(stat="identity", fill="steelblue") +
   xlab("Shap Value (abs.)") +
-  ylab("Feature")
+  ylab("Feature") +
+  labs(title = "SHAP Feature Importance") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
   #geom_text(aes(label=abs_value), vjust=0, size=2)
 p
-ggsave(filename = paste0(path, "/results/SHAP_feature_importance.jpg"), plot = p)
+
+
+ggsave(filename = paste0(path, "/results/SHAP_feature_importance.jpg"), plot = p, dpi = 450)
 
 #----------------------------
 #Shap summary
@@ -82,9 +86,15 @@ p2 = shap.plot.summary(shap_long)
 p2
 ggsave(filename = paste0(path, "/results/SHAP_summary_2.jpg"), plot = p2)
 
-shap.plot.summary.wrap1(model = xgmodel$learner.model, X =  select(training_data, - SalePrice), top_n = 10, dilute = 2)
+options(scipen=10000)
+p3 = shap.plot.summary.wrap1(model = xgmodel$learner.model, X =  select(training_data, - SalePrice), top_n = 6, dilute = 2) +
+  labs(title = "SHAP Summary Plot")  + ylab("Shapley value") +  xlab("Features") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+  
+p3
+ggsave(filename = paste0(path, "/results/SHAP_summary_3.jpg"), plot = p3, dpi = 450)
 
-shap.summary_plot
+
 
 
 xgb.plot.shap(data = as.matrix(select(training_data, - SalePrice)), model = xgmodel$learner.model, top_n = 6)
@@ -150,11 +160,14 @@ plotting_data = summary(imp)
 
 p3<-ggplot(data=plotting_data, aes(x=RMSLE, y=reorder(features, RMSLE))) +
   geom_bar(stat="identity", fill="steelblue") +
-  xlab("Permutation Feature Importance (RMSE)") +
-  ylab("Feature")
+  xlab("Feature Importance (RMSE)") +
+  ylab("Feature") +
+  labs(title = "Permutation Feature Importance") +
+  scale_x_continuous(breaks= seq(0, 25000, by= 5000)) +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 #geom_text(aes(label=abs_value), vjust=0, size=2)
 p3
-ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), plot = p3)
+ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), plot = p3, dpi = 450)
 
 
 
@@ -228,10 +241,11 @@ training_data_linear_reg = readRDS(paste0(path, "/results/train_linear_regressio
 
 #Shap Feature Importance
 #No package available there
-library(shapper)
 
-ive_rf = individual_variable_effect(x = lm, data = training_data_linear_reg, new_observation = training_data_linear_reg[1,])
-plot(ive_rf)
+#library(shapper)
+
+#ive_rf = individual_variable_effect(x = lm, data = training_data_linear_reg, new_observation = training_data_linear_reg[1,])
+#plot(ive_rf)
 
 #Permutation Feasure Importance  
 f = function(truth, response) {
@@ -287,11 +301,14 @@ plotting_data = summary(imp)
 
 p4<-ggplot(data=plotting_data, aes(x=RMSE, y=reorder(features, RMSE))) +
   geom_bar(stat="identity", fill="steelblue") +
-  xlab("Permutation Feature Importance (RMSE)") +
-  ylab("Feature")
+  xlab("Feature Importance (RMSE)") +
+  ylab("Feature") +
+  labs(title = "Permutation Feature Importance - Linear Regression") +
+  scale_x_continuous(breaks= seq(0, 25000, by= 5000)) +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 #geom_text(aes(label=abs_value), vjust=0, size=2)
 p4
-ggsave(filename = paste0(path, "/results/permutation_feature_importance_linear_regression.jpg"), plot = p4)
+ggsave(filename = paste0(path, "/results/permutation_feature_importance_linear_regression.jpg"), plot = p4, dpi = 450)
 
 #T values Feasure Importance  
 plotting_data = enframe(summary(lm)[["coefficients"]][, "t value"]) %>% slice(2:n) %>% mutate(value = abs(value))
