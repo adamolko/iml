@@ -78,3 +78,66 @@ ggplot(training_data, aes(x=GrLivArea, y=LotArea, colour = GrLivArea >= 623 & Lo
 #look at those observations in more detail (features!)
 
 training_data %>% filter(GrLivArea >= 3551)
+
+shap_values <- shap.values(xgb_model = xgmodel$learner.model, X_train = select(training_data, - SalePrice))
+bias = shap_values$BIAS0
+shap_long <- shap.prep(shap_contrib = shap_values$shap_score,  X_train = select(training_data, - SalePrice))
+point_finder = shap_long %>% filter(rfvalue >= 3551 , variable == "GrLivArea")  %>% pull(ID)
+
+point1_shap = shap_long %>% filter(ID == point_finder[1]) %>% arrange(desc(abs(value)))
+point1_shap_sum = sum(point1_shap %>% pull(value)) + bias
+point2_shap = shap_long %>% filter(ID == point_finder[2]) %>% arrange(desc(abs(value)))
+point2_shap_sum = sum(point2_shap %>% pull(value)) + bias
+point3_shap = shap_long %>% filter(ID == point_finder[3]) %>% arrange(desc(abs(value)))
+point3_shap_sum = sum(point3_shap %>% pull(value)) + bias
+point4_shap = shap_long %>% filter(ID == point_finder[4]) %>% arrange(desc(abs(value)))
+point4_shap_sum = sum(point4_shap %>% pull(value)) + bias
+
+
+point1_shap_plot = point1_shap %>% slice(1:15)
+point2_shap_plot = point2_shap %>% slice(1:15)
+point3_shap_plot = point3_shap %>% slice(1:15)
+point4_shap_plot = point4_shap %>% slice(1:15)
+
+
+p1<-ggplot(data=point1_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ", rfvalue), abs(value)))) +
+  labs(title = paste0("Shapley values for observation 1"),
+       subtitle = paste0("Predicted Sale Price: ", round(point1_shap_sum,0))) +
+  geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
+  geom_text(aes(label=round(value, digits = 0)), color="black", x=-25000,
+            size=3)+ xlim(-30000, NA) +
+  #hjust=-1*sign(value)
+  scale_fill_gradient(name="SHAP value (abs.)")
+p1
+
+
+p2<-ggplot(data=point2_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ", rfvalue), abs(value)))) +
+  labs(title = paste0("Shapley values for observation 2"),
+       subtitle = paste0("Predicted Sale Price: ", round(point2_shap_sum,0))) +
+  geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
+  geom_text(aes(label=round(value, digits = 0)), color="black", x=-45000,
+            size=3)+ xlim(-50000, NA) +
+  #hjust=-1*sign(value)
+  scale_fill_gradient(name="SHAP value (abs.)")
+p2
+
+p3<-ggplot(data=point3_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ", rfvalue), abs(value)))) +
+  labs(title = paste0("Shapley values for observation 3"),
+       subtitle = paste0("Predicted Sale Price: ", round(point3_shap_sum,0))) +
+  geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
+  geom_text(aes(label=round(value, digits = 0)), color="black", x=-25000,
+            size=3)+ xlim(-30000, NA) +
+  #hjust=-1*sign(value)
+  scale_fill_gradient(name="SHAP value (abs.)")
+p3
+
+p4<-ggplot(data=point4_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ", rfvalue), abs(value)))) +
+  labs(title = paste0("Shapley values for observation 4"),
+       subtitle = paste0("Predicted Sale Price: ", round(point4_shap_sum,0))) +
+  geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
+  geom_text(aes(label=round(value, digits = 0)), color="black", x=-55000,
+            size=3)+ xlim(-60000, NA) +
+  #hjust=-1*sign(value)
+  scale_fill_gradient(name="SHAP value (abs.)")
+p4
+
