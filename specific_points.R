@@ -118,13 +118,13 @@ library("mlrCPO")
 library("ggplot2")
 library(tidyverse)
 library(partykit)
-library(trft)
+#library(trft)
 library(variables)
 best.params = readRDS("C:/R - Workspace/moc/saved_objects/best_configs.rds")
 set.seed(1234)
 pred = Predictor$new(xgmodel, data = training_data)
-ctr = partykit::ctree_control(maxdepth = 5L)
-pred$conditionals = fit_conditionals(pred$data$get.x(), ctrl = ctr)
+# ctr = partykit::ctree_control(maxdepth = 5L)
+# pred$conditionals = fit_conditionals(pred$data$get.x(), ctrl = ctr)
 #point2 = training_data %>% filter( GrLivArea ==1699  & OverallQual < 5) #ID is 1187
 #pred$predict(point2)
 not_categories <- c("LotArea", "YearBuilt", "TotalBsmtSF",
@@ -133,10 +133,10 @@ variables = colnames(training_data)
 categories <- variables[which(!variables %in% not_categories)]
 for(category in categories){
   print(category)
-  #pred[["data"]][["X"]][[category]] = as.integer( pred[["data"]][["X"]][[category]])
-  pred[["data"]][["X"]][[category]] = as.factor(pred[["data"]][["X"]][[category]])
+  pred[["data"]][["X"]][[category]] = as.integer( pred[["data"]][["X"]][[category]])
+  #pred[["data"]][["X"]][[category]] = as.factor(pred[["data"]][["X"]][[category]])
   #point2[[category]] = as.integer(point2[[category]])
-  point2[[category]] = as.factor(point2[[category]])
+  #point2[[category]] = as.factor(point2[[category]])
   
 }
 point2_other =  pred[["data"]][["X"]] %>% filter( GrLivArea ==1699  & OverallQual == 3) %>% add_column(SalePrice = 95000, .after = "porch_area")
@@ -163,7 +163,7 @@ list_features_not_changing = c("MSZoning.RL" ,"MSZoning.RM" ,"MSZoning.C..all.",
                               
 
 counterfactual = Counterfactuals$new(pred, x.interest = point2_other,
-                                     target = 120000, generations = 20, track.infeas=TRUE, epsilon = 200,
+                                     target = 110000, generations = 20, track.infeas=TRUE, epsilon = 200,
                                      fixed.features = list_features_not_changing)
 # system.time({credit.cf = Counterfactuals$new(predictor = pred, 
 #                                              x.interest = point2_other, 
@@ -180,5 +180,8 @@ counterfactual = Counterfactuals$new(pred, x.interest = point2_other,
 actual_counterfactuals = counterfactual$results$counterfactuals
 diff_counterfactuals = counterfactual$results$counterfactuals.diff
 
-counterfactual$results
+counterfactuals_results = counterfactual$results
+counterfactuals_results
+saveRDS(file = paste0(path, "/results/counterfactuals_results.rds"), object = counterfactuals_results)
+
 
