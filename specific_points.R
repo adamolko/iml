@@ -33,8 +33,10 @@ points %>% select(GrLivArea)
 
 #Need to calculate shap values for them (ID changes for some reason then...)
 shap_values <- shap.values(xgb_model = xgmodel$learner.model, X_train = select(training_data, - SalePrice))
+saveRDS(paste0(path, "/results/shap_values.rds"), object = shap_values)
 bias = shap_values$BIAS0
 shap_long <- shap.prep(shap_contrib = shap_values$shap_score,  X_train = select(training_data, - SalePrice))
+saveRDS(paste0(path, "/results/shap_long.rds"), object = shap_long)
 point1_finder = shap_long %>% filter(rfvalue == 1698 , variable == "GrLivArea") %>% pull(ID)
 point2_finder = shap_long %>% filter(rfvalue == 1699 , variable == "GrLivArea") %>% pull(ID)
 
