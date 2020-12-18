@@ -6,15 +6,11 @@ library(iml)
 library(featureImportance)
 
 ada_check = FALSE
-
-#Tell me if that works :)
 if(ada_check){
   path = ""
-  source(cleaning_path_train)
 } else{
   path ="C:/R - Workspace/IML"
 }
-
 #get the model & the training data first
 xgmodel = readRDS(paste0(path, "/results/xgboost_model.rds"))
 training_data = readRDS(paste0(path, "/results/training_data.rds"))
@@ -22,13 +18,13 @@ training_data = readRDS(paste0(path, "/results/training_data.rds"))
 #------------------------------------------
 #Shap Feature Importance
 set.seed(123)
-shap_values <- shap.values(xgb_model = xgmodel$learner.model, X_train = select(training_data, - SalePrice))
 
+#Get shap values for each observation:
+shap_values <- shap.values(xgb_model = xgmodel$learner.model, X_train = select(training_data, - SalePrice))
+#Sort variables by name, such that grouping categories is easier:
 shap_values$shap_score = shap_values$shap_score %>% select(sort(current_vars()))
 
-
 #Group together effects of categorical variables
-
 list_categories = c(c("MSZoning", "MSZoning.C..all.", "MSZoning.RM"),
                     c("LotShape","LotShape.IR1","LotShape.Reg"),
                     c("BldgType","BldgType.1Fam","BldgType.TwnhsE"),
@@ -49,7 +45,6 @@ list_categories = c(c("MSZoning", "MSZoning.C..all.", "MSZoning.RM"),
                     c("SaleType","SaleType.COD","SaleType.WD"),
                     c("SeasonSold","SeasonSold.a","SeasonSold.su")
                     )
-
 for(i in seq(from=1, to=length(list_categories), by=3)){
   name = list_categories[i]
   from =  list_categories[i+1]
@@ -58,14 +53,17 @@ for(i in seq(from=1, to=length(list_categories), by=3)){
   shap_values$shap_score = select(shap_values$shap_score,  -(from: to))
   
 }
+#Now calculate absolute means manually for our feature importance measure:
 shap_values$mean_shap_score =  shap_values$shap_score %>% summarise_all(~ mean(abs(.)))
-shap_values$shap_score = shap_values$shap_score %>% select(sort(current_vars()))
-shap_values$mean_shap_score = shap_values$mean_shap_score %>% select(sort(current_vars()))
 
-plotting_data = as_tibble(shap_values$mean_shap_score) %>% pivot_longer(cols = everything()) %>% mutate(abs_value = abs(value))
+#shap_values$shap_score = shap_values$shap_score %>% select(sort(current_vars()))
+#shap_values$mean_shap_score = shap_values$mean_shap_score %>% select(sort(current_vars()))
+
+#Now get the means in correct form for plotting
+plotting_data = as_tibble(shap_values$mean_shap_score) %>% pivot_longer(cols = everything())
 
 
-p<-ggplot(data=plotting_data, aes(x=abs_value, y=reorder(name, abs_value))) +
+p<-ggplot(data=plotting_data, aes(x=value, y=reorder(name, value))) +
   geom_bar(stat="identity", fill="steelblue") +
   xlab("Shap Value (abs.)") +
   ylab("Feature") +
@@ -79,13 +77,10 @@ ggsave(filename = paste0(path, "/results/SHAP_feature_importance.jpg"), plot = p
 
 #----------------------------
 #Shap summary
-#Still need to figure out, how to deal with categories!
+
 shap_values <- shap.values(xgb_model = xgmodel$learner.model, X_train = select(training_data, - SalePrice))
 shap_long <- shap.prep(shap_contrib = shap_values$shap_score, X_train = select(training_data, - SalePrice))
-p2 = shap.plot.summary(shap_long)
-p2
-ggsave(filename = paste0(path, "/results/SHAP_summary_2.jpg"), plot = p2)
-
+#Do summary plot for top 6 variables 
 options(scipen=10000)
 p3 = shap.plot.summary.wrap1(model = xgmodel$learner.model, X =  select(training_data, - SalePrice), top_n = 6, dilute = 2) +
   labs(title = "SHAP Summary Plot")  + ylab("Shapley value") +  xlab("Features") +
@@ -94,14 +89,11 @@ p3 = shap.plot.summary.wrap1(model = xgmodel$learner.model, X =  select(training
 p3
 ggsave(filename = paste0(path, "/results/SHAP_summary_3.jpg"), plot = p3, dpi = 450)
 
-
-
-
-xgb.plot.shap(data = as.matrix(select(training_data, - SalePrice)), model = xgmodel$learner.model, top_n = 6)
-
 #------------------------------
-#Permutation Feature Importance   - NEW
-#USE RMSE instead of RMSLE, because through permutation negative values (especially later in regression) are possible
+#Permutation Feature Importance 
+
+#First define evaluation measure
+# Use RMSE instead of RMSLE, because through permutation negative values (especially later in regression) are possible
 f = function(task, model, pred, feats, extra.args) {
 
   sqrt(sum(   ( pred$data$response - pred$data$truth  )^2) /length(pred$data$response)  )
@@ -109,6 +101,7 @@ f = function(task, model, pred, feats, extra.args) {
 meas = makeMeasure(id = "RMSLE", minimize = TRUE,
             properties = c("regr", "response"), fun = f, extra.args = list())
 set.seed(123)
+#Need to define manually, which variables are only permutated together:
 imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 50, measures  = meas,
                         features = list(
                           MSZoning = c("MSZoning.RL", "MSZoning.RM", "MSZoning.C..all.", "MSZoning.FV"),
@@ -170,41 +163,12 @@ p3
 ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), plot = p3, dpi = 450)
 
 
-
-
-
-
-
-
-#-----------------------------
-#Permutation Feature Importance
-
-# mod <- Predictor$new(xgmodel, data = select(training_data, - SalePrice), y = select(training_data, SalePrice))
-# imp <- FeatureImp$new(predictor = mod, loss = "rmsle", compare="difference")
-# imp$results = imp$results %>% arrange(feature)
-# for(i in seq(from=1, to=length(list_categories), by=3)){
-#   name = list_categories[i]
-#   from =  list_categories[i+1]
-#   to =  list_categories[i+2]
-#   
-#   index_from = which(imp$results$feature == from)
-#   index_to = which(imp$results$feature == to)
-#   
-#   new_row = colSums( xxx[index_from:index_to,2:5] )
-#   imp$results = imp$results[-c(index_from:index_to), ]
-#   
-#   imp$results = imp$results %>% add_row(feature = name, importance.05 = new_row[1], importance = new_row[2], importance.95 = new_row[3], permutation.error = new_row[4])
-# }
-# plotting_data2 = imp$results
-# p3<-ggplot(data=plotting_data2, aes(x=importance, y=reorder(feature, importance))) +
-#   geom_bar(stat="identity", fill="steelblue") +
-#   xlab("Feature Importance (Loss: RMSLE)") +
-#   ylab("Feature")
-# p3
-# ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), plot = p3)
-
 #--------------------------------
 #Interaction strength - H -statistic
+
+#Warning: might have to reload packages afterwards, because it screws with some of the dependencies
+
+#For all variables:
 mod <- Predictor$new(xgmodel, data = select(training_data, - SalePrice), y = select(training_data, SalePrice))
 set.seed(123)
 ia <- Interaction$new(mod, grid.size = 50)
@@ -241,11 +205,6 @@ training_data_linear_reg = readRDS(paste0(path, "/results/train_linear_regressio
 
 #Shap Feature Importance
 #No package available there
-
-#library(shapper)
-
-#ive_rf = individual_variable_effect(x = lm, data = training_data_linear_reg, new_observation = training_data_linear_reg[1,])
-#plot(ive_rf)
 
 #Permutation Feasure Importance  
 f = function(truth, response) {
@@ -306,11 +265,10 @@ p4<-ggplot(data=plotting_data, aes(x=RMSE, y=reorder(features, RMSE))) +
   labs(title = "Permutation Feature Importance - Linear Regression") +
   scale_x_continuous(breaks= seq(0, 25000, by= 5000)) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
-#geom_text(aes(label=abs_value), vjust=0, size=2)
 p4
 ggsave(filename = paste0(path, "/results/permutation_feature_importance_linear_regression.jpg"), plot = p4, dpi = 450)
 
-#T values Feasure Importance  
+#T value Feature Importance  
 plotting_data = enframe(summary(lm)[["coefficients"]][, "t value"]) %>% slice(2:n) %>% mutate(value = abs(value))
 
 p5<-ggplot(data=plotting_data, aes(x=value, y=reorder(name, value))) +

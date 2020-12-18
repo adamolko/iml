@@ -6,7 +6,6 @@ library(mlr)
 library(viridis)
 
 ada_check = FALSE
-
 if(ada_check){
   path = ""
   source(cleaning_path_train)
@@ -71,7 +70,7 @@ ggsave(filename = paste0(path, "/results/SHAP_values_observation_low_quality.jpg
 
 
 #--------------------------------
-#Lets pick observation 2 and du further analysis
+#Lets pick observation 2 and do further analysis
 
 #---------
 #LocalModel
@@ -84,10 +83,11 @@ point2
 local_model <- LocalModel$new(mod, x.interest = point2, k = 10)
 # Look at the results in a table
 local_model$results
-# Or as a plot
+# And as a plot
 g1 = plot(local_model)
 g1
 ggsave(filename = paste0(path, "/results/Local_Model_prediction_k10.jpg"), plot = g1)
+
 #Choose 30 
 local_model <- LocalModel$new(mod, x.interest = point2, k = 30)
 local_model$results
@@ -102,7 +102,7 @@ g3 = plot(local_model)
 g3
 ggsave(filename = paste0(path, "/results/Local_Model_prediction_k50.jpg"), plot = g3)
 
-#My takeaway:
+#Takeaway:
 #Fidelity is low, if k chosen between 2 and 20 
 # ---> can't really use it for our question on how to change features to increase prediction
 # ---> but interpretation a lot easier, how prediction is made
@@ -110,25 +110,31 @@ ggsave(filename = paste0(path, "/results/Local_Model_prediction_k50.jpg"), plot 
 # ---> then we can use it, but: how good  is generalization then?
 # ---> interpretation of prediction also much worse
 
-
 #---------
 #Counterfactuals
+#Super difficult to get that running
+#Basically downloaded the packages manually from github and then tried to somehow get it to work
+
 devtools::load_all("C:/R - Workspace/moc/counterfactuals", export_all = FALSE)
 devtools::load_all("C:/R - Workspace/moc/iml", export_all = FALSE)
-library("mlr")
-library("mlrCPO")
-library("ggplot2")
+library(mlr)
+library(mlrCPO)
+library(ggplot2)
 library(tidyverse)
 library(partykit)
 #library(trft)
 library(variables)
+
 best.params = readRDS("C:/R - Workspace/moc/saved_objects/best_configs.rds")
 set.seed(1234)
 pred = Predictor$new(xgmodel, data = training_data)
+
 # ctr = partykit::ctree_control(maxdepth = 5L)
 # pred$conditionals = fit_conditionals(pred$data$get.x(), ctrl = ctr)
 #point2 = training_data %>% filter( GrLivArea ==1699  & OverallQual < 5) #ID is 1187
 #pred$predict(point2)
+
+#Need to define which variables are integers/categories, which should not change like doubles
 not_categories <- c("LotArea", "YearBuilt", "TotalBsmtSF",
                  "GrLivArea", "porch_area", "SalePrice")
 variables = colnames(training_data)
@@ -145,8 +151,9 @@ point2_other =  pred[["data"]][["X"]] %>% filter( GrLivArea ==1699  & OverallQua
 point2_other = as.data.frame(point2_other)
 
 
-
-#Set dummies of categories to not change:
+#Also: we can't changes the dummies belonging to categories, because that doesnt make any sense
+#Unfortunately, not possible to change all dummies belonging to one category at once (package doesnt support that)
+#But at least we can fix those dummies as features, that should not be changed
 # --> fixed.features
 list_features_not_changing = c("MSZoning.RL" ,"MSZoning.RM" ,"MSZoning.C..all.", "MSZoning.FV", "LotShape.Reg",
                                "LotShape.IR1", "Neighborhood.CollgCr", "Neighborhood.Veenker", "Neighborhood.Crawfor",
@@ -162,8 +169,10 @@ list_features_not_changing = c("MSZoning.RL" ,"MSZoning.RM" ,"MSZoning.C..all.",
                                "SaleCondition.Normal", "SaleCondition.Abnorml","SaleCondition.Partial", "SaleCondition.Family",
                                "SeasonSold.sp", "SeasonSold.su", "SeasonSold.a", "porch_type.enclosed_porch", "porch_type.multiple",
                                "porch_type.open_porch", "porch_type.screen_porch", "porch_type.three_s_porch", "porch_type.wood_deck")
-                              
 
+#Now actually let the algorithm run
+#Generations basically defines to some extent, how often it is run
+#Epsilon defines the difference from target, from which point onward it should be penalized
 counterfactual = Counterfactuals$new(pred, x.interest = point2_other,
                                      target = 110000, generations = 20, track.infeas=TRUE, epsilon = 200,
                                      fixed.features = list_features_not_changing)
@@ -179,11 +188,12 @@ counterfactual = Counterfactuals$new(pred, x.interest = point2_other,
 #                                              p.rec.use.orig = best.params$p.rec.use.orig)})
 
 
-actual_counterfactuals = counterfactual$results$counterfactuals
-diff_counterfactuals = counterfactual$results$counterfactuals.diff
-
 counterfactuals_results = counterfactual$results
 counterfactuals_results
+
+actual_counterfactuals = counterfactuals_results$counterfactuals
+diff_counterfactuals = counterfactuals_results$counterfactuals.diff
+
 saveRDS(file = paste0(path, "/results/counterfactuals_results.rds"), object = counterfactuals_results)
 
 

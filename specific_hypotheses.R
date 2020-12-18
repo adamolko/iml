@@ -6,7 +6,6 @@ library(mlr)
 library(viridis)
 
 ada_check = FALSE
-
 if(ada_check){
   path = ""
   source(cleaning_path_train)
@@ -14,11 +13,10 @@ if(ada_check){
   path ="C:/R - Workspace/IML"
 }
 
-#get the model & the training data first
+#get the models & the training data first
 xgmodel = readRDS(paste0(path, "/results/xgboost_model.rds"))
 lm = readRDS(paste0(path, "/results/linear_regression.rds"))
 training_data = readRDS(paste0(path, "/results/training_data.rds"))
-
 mod <- Predictor$new(xgmodel, data = training_data)
 mod_lm <- Predictor$new(lm, data = training_data)
 
@@ -33,7 +31,7 @@ g1 = plot(eff) + geom_line(colour="darkred" , size = 0.7) +
 g1 
 ggsave(filename = paste0(path, "/results/ALE_YearBuilt.jpg"), plot = g1, dpi = 450)
 
-#Need to compare linear regression
+#Compare to linear regression ALE
 eff <- FeatureEffect$new(mod_lm, feature = "YearBuilt", method="ale", grid.size = 20)
 g2 = plot(eff) + geom_line(colour="steelblue", linetype="twodash", size = 0.7) +
   labs(title = "Marginal effect on SalePrice using YearBuilt", subtitle="model = linear regression") +
@@ -78,8 +76,6 @@ ggsave(filename = paste0(path, "/results/ALE_YearBuilt_lm_xgboost.jpg"), plot = 
 # g
 # ggsave(filename = paste0(path, "/results/Combination_ALE_PDP_YearBuilt.jpg"), plot = g)
 
-
-
 #------------------------
 #Remod
 eff <- FeatureEffect$new(mod, feature = "Remod", method="ale", grid.size = 100)
@@ -99,7 +95,7 @@ g = plot(eff) +   #scale_fill_gradient(low="blue", high="red") +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
   #geom_point(data = training_data, aes(y =Remod, x = YearBuilt),color = "black", size = 1)
 g
-ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod.jpg"), plot = g, dpi = 450))
+ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod.jpg"), plot = g, dpi = 450)
 
 g = plot(eff) +   #scale_fill_gradient(low="blue", high="red") + 
   ggtitle("ALE") + scale_fill_viridis_c(name = "ALE")  +
