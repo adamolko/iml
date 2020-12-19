@@ -1,16 +1,16 @@
 library(iml)
 library(xgboost)
-library(tidyverse)
 library(SHAPforxgboost)
 library(mlr)
 library(viridis)
+library(tidyverse)
 
 ada_check = FALSE
 if(ada_check){
   path = ""
   source(cleaning_path_train)
 } else{
-  path ="C:/R - Workspace/IML"
+  path ="D:/R - Workspace/IML"
 }
 
 #get the model & the training data first
@@ -55,7 +55,7 @@ p1<-ggplot(data=point1_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ",
   #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p1
-ggsave(filename = paste0(path, "/results/SHAP_values_observation_high_quality.jpg"), plot = p1)
+ggsave(filename = paste0(path, "/results/SHAP_values_observation_high_quality.jpg"), plot = p1, dpi = 450, width = 8, height = 8)
 
 p2<-ggplot(data=point2_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ", rfvalue), abs(value)))) +
   labs(title = paste0("Shapley values for observation with low OverallQual"),
@@ -66,7 +66,7 @@ p2<-ggplot(data=point2_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ",
   #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p2
-ggsave(filename = paste0(path, "/results/SHAP_values_observation_low_quality.jpg"), plot = p2)
+ggsave(filename = paste0(path, "/results/SHAP_values_observation_low_quality.jpg"), plot = p2, dpi = 450, width = 8, height = 8)
 
 
 #--------------------------------

@@ -9,7 +9,7 @@ ada_check = FALSE
 if(ada_check){
   path = ""
 } else{
-  path ="C:/R - Workspace/IML"
+  path ="D:/R - Workspace/IML"
 }
 #get the model & the training data first
 xgmodel = readRDS(paste0(path, "/results/xgboost_model.rds"))
@@ -61,13 +61,13 @@ shap_values$mean_shap_score =  shap_values$shap_score %>% summarise_all(~ mean(a
 
 #Now get the means in correct form for plotting
 plotting_data = as_tibble(shap_values$mean_shap_score) %>% pivot_longer(cols = everything())
-
+plotting_data = plotting_data %>% mutate(name = ifelse(name == "Electrical.Fuse.or.Mix", "Electrical", name))
 
 p<-ggplot(data=plotting_data, aes(x=value, y=reorder(name, value))) +
   geom_bar(stat="identity", fill="steelblue") +
   xlab("Shap Value (abs.)") +
   ylab("Feature") +
-  labs(title = "SHAP Feature Importance") +
+  labs(title = "SHAP Feature Importance (xgboost)") +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
   #geom_text(aes(label=abs_value), vjust=0, size=2)
 p
@@ -98,70 +98,93 @@ f = function(task, model, pred, feats, extra.args) {
 
   sqrt(sum(   ( pred$data$response - pred$data$truth  )^2) /length(pred$data$response)  )
 }
-meas = makeMeasure(id = "RMSLE", minimize = TRUE,
+meas = makeMeasure(id = "RMSE", minimize = TRUE,
             properties = c("regr", "response"), fun = f, extra.args = list())
 set.seed(123)
+
 #Need to define manually, which variables are only permutated together:
+permutation_list = list(
+  MSZoning = c("MSZoning.RL", "MSZoning.RM", "MSZoning.C..all.", "MSZoning.FV"),
+  LotShape = c("LotShape.Reg", "LotShape.IR1"),
+  Neighborhood = c("Neighborhood.CollgCr", "Neighborhood.Veenker", "Neighborhood.Crawfor", "Neighborhood.NoRidge",
+                   "Neighborhood.Mitchel", "Neighborhood.Somerst", "Neighborhood.NWAmes", "Neighborhood.OldTown",
+                   "Neighborhood.BrkSide", "Neighborhood.Sawyer", "Neighborhood.NridgHt", "Neighborhood.NAmes",
+                   "Neighborhood.SawyerW", "Neighborhood.IDOTRR", "Neighborhood.MeadowV", "Neighborhood.Edwards",
+                   "Neighborhood.Timber", "Neighborhood.Gilbert", "Neighborhood.StoneBr", "Neighborhood.ClearCr",
+                   "Neighborhood.NPkVill", "Neighborhood.Blmngtn", "Neighborhood.BrDale", "Neighborhood.SWISU"),
+  numb_add_flr = "numb_add_flr",
+  pool = "pool",
+  BldgType = c("BldgType.1Fam", "BldgType.2fmCon", "BldgType.Duplex", "BldgType.TwnhsE"),
+  RoofStyle = c("RoofStyle.Gable", "RoofStyle.Hip"),
+  ExterQual = "ExterQual",
+  ExterCond = "ExterCond",
+  Foundation = c("Foundation.PConc", "Foundation.CBlock", "Foundation.BrkTil"),
+  BsmtQual = "BsmtQual",
+  BsmtFinType1 = "BsmtFinType1",
+  HeatingQC = "HeatingQC",
+  Electrical = "Electrical.Fuse.or.Mix",
+  KitchenQual = "KitchenQual",
+  Functional = c("Functional.Typ", "Functional.Min" ),
+  FireplaceQu = "FireplaceQu" ,
+  SaleType = c("SaleType.WD", "SaleType.New", "SaleType.COD"),
+  SaleCondition = c("SaleCondition.Normal", "SaleCondition.Abnorml" ,"SaleCondition.Partial", "SaleCondition.Family"),
+  SeasonSold = c("SeasonSold.sp", "SeasonSold.su", "SeasonSold.a"),
+  porch_type = c("porch_type.enclosed_porch", "porch_type.multiple", "porch_type.open_porch", 
+                 "porch_type.screen_porch", "porch_type.three_s_porch", "porch_type.wood_deck"),
+  LotArea = "LotArea",
+  YearBuilt = "YearBuilt",
+  TotalBsmtSF = "TotalBsmtSF",
+  GrLivArea = "GrLivArea",
+  porch_area = "porch_area",
+  FullBath = "FullBath",
+  HalfBath = "HalfBath",
+  BedroomAbvGr = "BedroomAbvGr",
+  KitchenAbvGr = "KitchenAbvGr",
+  GarageCars = "GarageCars",
+  OverallQual = "OverallQual",
+  OverallCond = "OverallCond",
+  CentralAir = "CentralAir",
+  PavedDrive = "PavedDrive",
+  Remod = "Remod")
 imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 50, measures  = meas,
-                        features = list(
-                          MSZoning = c("MSZoning.RL", "MSZoning.RM", "MSZoning.C..all.", "MSZoning.FV"),
-                          LotShape = c("LotShape.Reg", "LotShape.IR1"),
-                          Neighborhood = c("Neighborhood.CollgCr", "Neighborhood.Veenker", "Neighborhood.Crawfor", "Neighborhood.NoRidge",
-                                           "Neighborhood.Mitchel", "Neighborhood.Somerst", "Neighborhood.NWAmes", "Neighborhood.OldTown",
-                                            "Neighborhood.BrkSide", "Neighborhood.Sawyer", "Neighborhood.NridgHt", "Neighborhood.NAmes",
-                                           "Neighborhood.SawyerW", "Neighborhood.IDOTRR", "Neighborhood.MeadowV", "Neighborhood.Edwards",
-                                           "Neighborhood.Timber", "Neighborhood.Gilbert", "Neighborhood.StoneBr", "Neighborhood.ClearCr",
-                                           "Neighborhood.NPkVill", "Neighborhood.Blmngtn", "Neighborhood.BrDale", "Neighborhood.SWISU"),
-                          numb_add_flr = "numb_add_flr",
-                          pool = "pool",
-                          BldgType = c("BldgType.1Fam", "BldgType.2fmCon", "BldgType.Duplex", "BldgType.TwnhsE"),
-                          RoofStyle = c("RoofStyle.Gable", "RoofStyle.Hip"),
-                          ExterQual = "ExterQual",
-                          ExterCond = "ExterCond",
-                          Foundation = c("Foundation.PConc", "Foundation.CBlock", "Foundation.BrkTil"),
-                          BsmtQual = "BsmtQual",
-                          BsmtFinType1 = "BsmtFinType1",
-                          HeatingQC = "HeatingQC",
-                          Electrical = "Electrical.Fuse.or.Mix",
-                          KitchenQual = "KitchenQual",
-                          Functional = c("Functional.Typ", "Functional.Min" ),
-                          FireplaceQu = "FireplaceQu" ,
-                          SaleType = c("SaleType.WD", "SaleType.New", "SaleType.COD"),
-                          SaleCondition = c("SaleCondition.Normal", "SaleCondition.Abnorml" ,"SaleCondition.Partial", "SaleCondition.Family"),
-                          SeasonSold = c("SeasonSold.sp", "SeasonSold.su", "SeasonSold.a"),
-                          porch_type = c("porch_type.enclosed_porch", "porch_type.multiple", "porch_type.open_porch", 
-                                         "porch_type.screen_porch", "porch_type.three_s_porch", "porch_type.wood_deck"),
-                          LotArea = "LotArea",
-                          YearBuilt = "YearBuilt",
-                          TotalBsmtSF = "TotalBsmtSF",
-                          GrLivArea = "GrLivArea",
-                          porch_area = "porch_area",
-                          FullBath = "FullBath",
-                          HalfBath = "HalfBath",
-                          BedroomAbvGr = "BedroomAbvGr",
-                          KitchenAbvGr = "KitchenAbvGr",
-                          GarageCars = "GarageCars",
-                          OverallQual = "OverallQual",
-                          OverallCond = "OverallCond",
-                          CentralAir = "CentralAir",
-                          PavedDrive = "PavedDrive",
-                          Remod = "Remod"
+                        features = permutation_list
                         )
-)
 plotting_data = summary(imp)
 
 
-p3<-ggplot(data=plotting_data, aes(x=RMSLE, y=reorder(features, RMSLE))) +
+p3<-ggplot(data=plotting_data, aes(x=RMSE, y=reorder(features, RMSE))) +
   geom_bar(stat="identity", fill="steelblue") +
   xlab("Feature Importance (RMSE)") +
   ylab("Feature") +
-  labs(title = "Permutation Feature Importance") +
+  labs(title = "Permutation Feature Importance (xgboost)") +
   scale_x_continuous(breaks= seq(0, 25000, by= 5000)) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 #geom_text(aes(label=abs_value), vjust=0, size=2)
 p3
 ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), plot = p3, dpi = 450)
 
+#For Comparison with RMSLE:
+f = function(task, model, pred, feats, extra.args) {
+  
+  sqrt(sum(   ( log(pred$data$response + 1) - log(pred$data$truth + 1) )^2) /length(pred$data$response)  )
+}
+meas = makeMeasure(id = "RMSLE", minimize = TRUE,
+                   properties = c("regr", "response"), fun = f, extra.args = list())
+set.seed(123)
+imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 50, measures  = meas,
+                        features = permutation_list
+)
+plotting_data2 = summary(imp)
+
+pp3<-ggplot(data=plotting_data2, aes(x=RMSLE, y=reorder(features, RMSLE))) +
+  geom_bar(stat="identity", fill="steelblue") +
+  xlab("Feature Importance (RMSLE)") +
+  ylab("Feature") +
+  labs(title = "Permutation Feature Importance") +
+  #scale_x_continuous(breaks= seq(0, 25000, by= 5000)) +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+#geom_text(aes(label=abs_value), vjust=0, size=2)
+pp3
 
 #--------------------------------
 #Interaction strength - H -statistic
@@ -262,7 +285,7 @@ p4<-ggplot(data=plotting_data, aes(x=RMSE, y=reorder(features, RMSE))) +
   geom_bar(stat="identity", fill="steelblue") +
   xlab("Feature Importance (RMSE)") +
   ylab("Feature") +
-  labs(title = "Permutation Feature Importance - Linear Regression") +
+  labs(title = "Permutation Feature Importance (linear regression)") +
   scale_x_continuous(breaks= seq(0, 25000, by= 5000)) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 p4

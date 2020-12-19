@@ -10,7 +10,7 @@ if(ada_check){
   path = ""
   source(cleaning_path_train)
 } else{
-  path ="C:/R - Workspace/IML"
+  path ="D:/R - Workspace/IML"
 }
 
 #get the models & the training data first
@@ -91,18 +91,19 @@ ggsave(filename = paste0(path, "/results/ALE_Remod.jpg"), plot = g, dpi = 450)
 eff <- FeatureEffect$new(mod, feature = c("YearBuilt", "Remod"), grid.size = 100, method="ale")
 g = plot(eff) +   #scale_fill_gradient(low="blue", high="red") + 
   ggtitle("ALE") + scale_fill_viridis_c(name = "ALE")  +
-  labs(title = "ALE plot of SalePrice using Interaction of YearBuilt & Remod") +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
-  #geom_point(data = training_data, aes(y =Remod, x = YearBuilt),color = "black", size = 1)
+  labs(title = "ALE of SalePrice") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
+  scale_y_continuous(breaks= seq(0, 1, by= 1)) +
+  geom_point(data = training_data, aes(y =Remod, x = YearBuilt),color = "black", size = 1)
 g
-ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod.jpg"), plot = g, dpi = 450)
+ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod.jpg"), plot = g, dpi = 450, width = 8, height = 6)
 
 g = plot(eff) +   #scale_fill_gradient(low="blue", high="red") + 
-  ggtitle("ALE") + scale_fill_viridis_c(name = "ALE")  +
+  ggtitle("ALE of SalePrice") + scale_fill_viridis_c(name = "ALE")  +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
-  xlim(2000, NA) 
+ scale_y_continuous(breaks= seq(0, 1, by= 1)) + scale_x_continuous(breaks= seq(2000, 2012, by= 2), limits = c(2000,NA))
 g
-ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod_partial.jpg"), plot = g, dpi = 450)
+ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod_partial.jpg"), plot = g, dpi = 450, width = 8, height = 6)
 training_data %>% filter(YearBuilt>2005) %>% count()
 training_data %>% filter(YearBuilt==2006) %>% count()
 training_data %>% filter(YearBuilt==2006 &Remod==1) %>% count()
@@ -136,18 +137,34 @@ g1 = plot(eff)  + geom_line(colour="darkred", size = 0.7) + #+ xlim(0, 3500)
   labs(title = "ALE plot of SalePrice using GrLivArea") +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 g1
-ggsave(filename = paste0(path, "/results/ALE_GrLivArea.jpg"), plot = g1, dpi = 450) 
+ggsave(filename = paste0(path, "/results/ALE_GrLivArea.jpg"), plot = g1, dpi = 450, width = 8, height = 6) 
 # g2 = plot(eff)  + geom_line(colour="darkred", size = 0.7) + xlim(500, 3000)
 # g2
+
+#Combination ALE & PDP
+eff <- FeatureEffect$new(mod, feature = "GrLivArea", method="pdp", grid.size = 60)
+eff.dat_pdp <- eff$results %>% mutate(.value = .value-min(.value))
+eff <- FeatureEffect$new(mod, feature = "GrLivArea", method="ale", grid.size = 60)
+eff.dat_ale<- eff$results %>% mutate(.value = .value-min(.value))
+g = ggplot() + 
+  geom_line(aes(y = eff.dat_ale$.value, x=eff.dat_ale$GrLivArea), color="steelblue", linetype="twodash") + 
+  geom_line(aes(y = eff.dat_pdp$.value, x=eff.dat_pdp$GrLivArea), color="darkred") +
+  xlab("GrLivArea") + ylab("Marginal Effect") +
+  labs(title = "Marginal effect of ALE and PDP using GrLivArea") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+g
+ggsave(filename = paste0(path, "/results/Combination_ALE_PDP_GrLivArea.jpg"), plot = g, dpi = 450)
+
 #-------------------
 #OverallQual
 #ALE
 eff <- FeatureEffect$new(mod, feature = "OverallQual", method="ale")
 g1 = plot(eff)  + geom_line(colour="steelblue", size = 0.7) +
   labs(title = "ALE plot of SalePrice using OverallQual") +
+  scale_x_continuous(breaks= seq(1, 10, by= 1)) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 g1
-ggsave(filename = paste0(path, "/results/ALE_OverallQual.jpg"), plot = g1, dpi = 450) 
+ggsave(filename = paste0(path, "/results/ALE_OverallQual.jpg"), plot = g1, dpi = 450, width = 8, height = 6)
 
 #LotArea
 #ALE
@@ -164,10 +181,11 @@ ggsave(filename = paste0(path, "/results/ALE_LotArea.jpg"), plot = g1, dpi = 450
 eff <- FeatureEffect$new(mod, feature = c("GrLivArea", "OverallQual"), method="ale")
 g = plot(eff) +   #scale_fill_gradient(low="blue", high="red") + 
    scale_fill_viridis_c(name = "ALE")  +
-  labs(title = "ALE plot of SalePrice using Interaction of GrLivArea & OverallQual") +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) 
+  labs(title = "ALE of SalePrice") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
+  scale_y_continuous(breaks= seq(1, 10, by= 1))
 g
-ggsave(filename = paste0(path, "/results/ALE_GrLivArea_with_OverallQual.jpg"), plot = g, dpi = 450)
+ggsave(filename = paste0(path, "/results/ALE_GrLivArea_with_OverallQual.jpg"), plot = g, dpi = 450, width = 8, height = 6)
 
 
 #Shap Dependence
@@ -179,7 +197,7 @@ g1 = g1 + labs(color = "OverallQual") +geom_point(size=1) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) 
 g1$layers[[2]] = NULL
 g1
-ggsave(filename = paste0(path, "/results/SHAP_dependence_GrLivArea_with_OverallQual.jpg"), plot = g1, dpi = 450)
+ggsave(filename = paste0(path, "/results/SHAP_dependence_GrLivArea_with_OverallQual.jpg"), plot = g1,dpi = 450, width = 10, height = 6)
 
 #Shap Dependence - highlight points
 shap_long <- shap.prep(xgb_model = xgmodel$learner.model, X_train = select(training_data, - SalePrice))
@@ -197,7 +215,7 @@ g1 <- shap.plot.dependence(data_long = shap_long, x = 'GrLivArea', y = 'GrLivAre
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) 
 g1$layers[[2]] = NULL
 g1
-ggsave(filename = paste0(path, "/results/SHAP_dependence_GrLivArea_with_OverallQual_points_highlighted.jpg"), plot = g1, dpi = 450)
+ggsave(filename = paste0(path, "/results/SHAP_dependence_GrLivArea_with_OverallQual_points_highlighted.jpg"), plot = g1,dpi = 450, width = 10, height = 6)
 
 #These are the points: 
 training_data %>% filter( GrLivArea ==1699  & OverallQual < 5) #ID is 1187
