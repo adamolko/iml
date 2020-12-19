@@ -1,36 +1,34 @@
+library(Hmisc)
 library(caret)
 library(Metrics)
-library(dplyr)
 library(readr)
 library(plyr)
 library(glmnet)
-library(tidyverse)
 library(forcats)
 library(corrplot)
 library(rpart)
 library(rpart.plot)
 library(ipred)
 library(mctest)
+library(randomForest)
+library(tidyverse)
 
-set.seed(123)
+
+
 ada_check = FALSE
-
-#Tell me if that works :)
 if(ada_check){
   path = ""
-  source(cleaning_path_train)
 } else{
   path ="D:/R - Workspace/IML"
 }
-
-data = paste0(path, "/train.csv")
-cleaning_path = paste0(path, "/cleaning.R")
-source(cleaning_path)
-# path_train = "data/train.csv"
-# source("cleaning_train.R")
+path_train = paste0(path, "/data/train.csv")
+cleaning_path_train = paste0(path, "/cleaning_train.R")
+source(cleaning_path_train)
 data = housing
 
+#-------------------------
 #LINEAR MODEL
+set.seed(123)
 smp_size <- floor(0.75 * nrow(data))
 train_ind <- sample(seq_len(nrow(data)), size = smp_size)
 
@@ -41,26 +39,22 @@ not_dummies <- c("LotArea", "YearBuilt", "TotalBsmtSF",
                  "KitchenAbvGr", "GarageCars", "OverallQual", 
                  "OverallCond", "CentralAir", "PavedDrive",
                  "pool", "Remod", "ExterQual", "ExterCond", "BsmtQual", "HeatingQC",  "KitchenQual", "BsmtFinType1", "FireplaceQu")
-dummies <- select(train, -all_of(not_dummies))
+dummies <- select(data, -all_of(not_dummies))
+
 dmy <- dummyVars(" ~ .", data = dummies)
 trsf <- data.frame(predict(dmy, newdata = dummies))
 for (name in not_dummies) {
   trsf[name] <- data[name]
 }
 
-#removing one level for each dummy encoded categorical feature
-# AND: after analysis with imcdiag(model_lm) also need to drop another category for BsmtQual & BsmtFinType1, because 
-# both have a NO dummy in there and therefore we end up with perfect multicollinearity
-# in theory, the "no basement" should be captured by non-linear effects of the basement size (TotalBsmtSF), which linear regression cant do
-# therefore, for perfect modeling, we would probably have to add a basement dummy, indicating if a basement if exists or not
-# this is a good talking point, when comparing models :)
+#removing one level for each dummy encoded categorical feature to avoid perfect multicollinearity
 reference_levels <- c("MSZoning.RH", "LotShape.IR2.5",
                       "Neighborhood.Blueste", "BldgType.Twnhs",
                       "RoofStyle.Other", "Foundation.Other",
                       "Functional.Maj",
                       "SaleType.Other", "SaleCondition.Other",
                       "SeasonSold.w", "porch_type.no", "Electrical.SBrkr")
-trsf <- select(trsf, -reference_levels)
+trsf <- select(trsf, -all_of(reference_levels))
 
 #75/25 train/test split
 train <- trsf[train_ind, ]
@@ -82,16 +76,17 @@ predictions_lm <- predict(model_lm, test_X)
 
 rmse_lm <- rmse(test_y, predictions_lm)
 rmse_lm
-#rmse of 34502.81
+#rmse of 34000.24
 rmsle_lm <- rmsle(test_y, predictions_lm)
 rmsle_lm
-#rmsle 0.1979461
+#rmsle 0.1727657
 
 saveRDS(model_lm, paste0(path, "/results/linear_regression.rds"))
 saveRDS(train, paste0(path, "/results/train_linear_regression.rds"))
+#--------------------------------------
 #LASSO
 #uses the same dummy encoding as lm
-
+set.seed(123)
 #choosing best lambda value based on training data
 lambdas <- 10^seq(2, -3, by = -.1)
 lasso_reg <- cv.glmnet(data.matrix(train_X), train_y, alpha = 1, lambda = lambdas, standardize = TRUE, nfolds = 5)
@@ -103,11 +98,43 @@ lasso_model <- glmnet(data.matrix(train_X), train_y, alpha = 1, lambda = lambda_
 predictions_lasso <- predict(lasso_model, s = lambda_best, newx = data.matrix(test_X))
 rmse_lasso <- rmse(test_y, predictions_lasso)
 rmse_lasso
-#29044.89
+#33906.95
 rmsle_lasso <- rmsle(test_y, predictions_lasso)
 rmsle_lasso
-#0.1496133
+#0.1705668
 
+
+#--------------------------------------
+#Random Forest
+set.seed(123)
+random_forest<- randomForest(x = train_X, y=train_y)
+random_forest
+
+pred_randomForest =  predict(random_forest, test_X)
+
+rmse_randomForest <- rmse(test_y, pred_randomForest)
+rmse_randomForest
+#28236.06
+rmsle_randomForest <- rmsle(test_y, pred_randomForest)
+rmsle_randomForest
+#0.135233
+
+
+
+
+
+
+
+
+
+
+
+
+#-----------------------------------
+#OTHER MODELS
+
+
+#--------------------------------------
 #REGRESSION TREES
 #with one-hot encoding rmse is actually worse
 train <- data[train_ind, ]
@@ -181,6 +208,7 @@ rmsle_regtree <- rmsle(test$SalePrice, pred)
 rmsle_regtree
 #0.2312028
 
+#--------------------------------------
 #BAGGED TREES
 ctrl <- trainControl(method = "cv",  number = 10) 
 

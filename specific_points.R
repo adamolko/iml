@@ -74,6 +74,7 @@ ggsave(filename = paste0(path, "/results/SHAP_values_observation_low_quality.jpg
 
 #---------
 #LocalModel
+
 mod <- Predictor$new(xgmodel, data = training_data)
 # Explain the first instance of the dataset with the LocalModel method:
 point2
@@ -110,8 +111,9 @@ ggsave(filename = paste0(path, "/results/Local_Model_prediction_k50.jpg"), plot 
 # ---> then we can use it, but: how good  is generalization then?
 # ---> interpretation of prediction also much worse
 
-#---------
+#----------------------------------
 #Counterfactuals
+
 #Super difficult to get that running
 #Basically downloaded the packages manually from github and then tried to somehow get it to work
 
