@@ -10,7 +10,7 @@ if(ada_check){
   path = ""
   source(cleaning_path_train)
 } else{
-  path ="D:/R - Workspace/IML"
+  path ="C:/R - Workspace/IML"
 }
 
 #get the model & the training data first
@@ -84,17 +84,41 @@ point2
 local_model <- LocalModel$new(mod, x.interest = point2, k = 10)
 # Look at the results in a table
 local_model$results
+best_model_index = local_model$best.fit.index
+intercept1 = local_model$model$a0[best_model_index]
 # And as a plot
 g1 = plot(local_model)
 g1
 ggsave(filename = paste0(path, "/results/Local_Model_prediction_k10.jpg"), plot = g1)
 
+
+#Choose 30 
+local_model <- LocalModel$new(mod, x.interest = point2, k = 20)
+local_model$results
+best_model_index = local_model$best.fit.index
+intercept5 = local_model$model$a0[best_model_index]
+g5 = plot(local_model)
+g5
+ggsave(filename = paste0(path, "/results/Local_Model_prediction_k20.jpg"), plot = g5)
+
+
 #Choose 30 
 local_model <- LocalModel$new(mod, x.interest = point2, k = 30)
 local_model$results
+best_model_index = local_model$best.fit.index
+intercept2 = local_model$model$a0[best_model_index]
 g2 = plot(local_model)
 g2
 ggsave(filename = paste0(path, "/results/Local_Model_prediction_k30.jpg"), plot = g2)
+
+#Choose 40 
+local_model <- LocalModel$new(mod, x.interest = point2, k = 40)
+local_model$results
+best_model_index = local_model$best.fit.index
+intercept3 = local_model$model$a0[best_model_index]
+g4 = plot(local_model)
+g4
+ggsave(filename = paste0(path, "/results/Local_Model_prediction_k40.jpg"), plot = g4)
 
 #Choose 50 
 local_model <- LocalModel$new(mod, x.interest = point2, k = 50)
@@ -176,7 +200,7 @@ list_features_not_changing = c("MSZoning.RL" ,"MSZoning.RM" ,"MSZoning.C..all.",
 #Generations basically defines to some extent, how often it is run
 #Epsilon defines the difference from target, from which point onward it should be penalized
 counterfactual = Counterfactuals$new(pred, x.interest = point2_other,
-                                     target = 110000, generations = 20, track.infeas=TRUE, epsilon = 200,
+                                     target = 110000, generations = 10, track.infeas=TRUE, epsilon = 200,
                                      fixed.features = list_features_not_changing)
 # system.time({credit.cf = Counterfactuals$new(predictor = pred, 
 #                                              x.interest = point2_other, 
@@ -198,4 +222,4 @@ diff_counterfactuals = counterfactuals_results$counterfactuals.diff
 
 saveRDS(file = paste0(path, "/results/counterfactuals_results.rds"), object = counterfactuals_results)
 
-
+xxx = readRDS(paste0(path, "/results/counterfactuals_results.rds"))

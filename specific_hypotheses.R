@@ -10,7 +10,7 @@ if(ada_check){
   path = ""
   source(cleaning_path_train)
 } else{
-  path ="D:/R - Workspace/IML"
+  path ="C:/R - Workspace/IML"
 }
 
 #get the models & the training data first
@@ -26,10 +26,10 @@ mod_lm <- Predictor$new(lm, data = training_data)
 #ALE
 eff <- FeatureEffect$new(mod, feature = "YearBuilt", method="ale", grid.size = 20)
 g1 = plot(eff) + geom_line(colour="darkred" , size = 0.7) +
-    labs(title = "ALE plot of SalePrice using YearBuilt", subtitle="model = xgboost") +
+    labs(title = "ALE plot of SalePrice using YearBuilt", subtitle="grid size = 20") +
    theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 g1 
-ggsave(filename = paste0(path, "/results/ALE_YearBuilt.jpg"), plot = g1, dpi = 450)
+ggsave(filename = paste0(path, "/results/ALE_YearBuilt.jpg"), plot = g1, dpi = 450, width = 9, height = 6)
 
 #Compare to linear regression ALE
 eff <- FeatureEffect$new(mod_lm, feature = "YearBuilt", method="ale", grid.size = 20)
@@ -52,58 +52,66 @@ g = ggplot() +
                      breaks = c("darkred", "steelblue"),
                      labels = c("Xgboost", "Linear Regression"),
                      guide = "legend") +
-  labs(title = "ALE plot of SalePrice using YearBuilt" , subtitle = "(both models)") +
+  labs(title = "ALE plot of SalePrice using YearBuilt" , subtitle = "both models, grid size = 20") +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 g
-ggsave(filename = paste0(path, "/results/ALE_YearBuilt_lm_xgboost.jpg"), plot = g, dpi = 450)
+ggsave(filename = paste0(path, "/results/ALE_YearBuilt_lm_xgboost.jpg"), plot = g, dpi = 450, width = 10, height = 6)
 
-#PDP
+# #PDP
 # eff <- FeatureEffect$new(mod, feature = "YearBuilt", method="pdp", grid.size = 20)
 # g = plot(eff) + geom_line(colour="darkred", size = 0.7)
 # g
 # ggsave(filename = paste0(path, "/results/PDP_YearBuilt.jpg"), plot = g)
-
+# 
 #Combination of ALE & PDP
-# eff <- FeatureEffect$new(mod, feature = "YearBuilt", method="pdp", grid.size = 50)
-# eff.dat_pdp <- eff$results %>% mutate(.value = .value-max(.value))
-# eff <- FeatureEffect$new(mod, feature = "YearBuilt", method="ale", grid.size = 50)
-# eff.dat_ale<- eff$results %>% mutate(.value = .value-max(.value))
-# g = ggplot() + 
-#   geom_line(aes(y = eff.dat_ale$.value, x=eff.dat_ale$YearBuilt), color = "darkred") + 
-#   geom_line(aes(y = eff.dat_pdp$.value, x=eff.dat_pdp$YearBuilt), color="steelblue", linetype="twodash") +
-#   scale_x_reverse() +
-#    xlab("YearBuilt") + ylab("Marginal Effect") #xlim(0, 1800) + ylim(-1000, 50000) +
-# g
-# ggsave(filename = paste0(path, "/results/Combination_ALE_PDP_YearBuilt.jpg"), plot = g)
+eff <- FeatureEffect$new(mod, feature = "YearBuilt", method="pdp", grid.size = 50)
+eff.dat_pdp <- eff$results %>% mutate(.value = .value-min(.value))
+eff <- FeatureEffect$new(mod, feature = "YearBuilt", method="ale", grid.size = 50)
+eff.dat_ale<- eff$results %>% mutate(.value = .value-min(.value))
+g = ggplot() +
+  geom_line(aes(y = eff.dat_ale$.value, x=eff.dat_ale$YearBuilt, color = "darkred")) +
+  geom_line(aes(y = eff.dat_pdp$.value, x=eff.dat_pdp$YearBuilt, color="steelblue"), linetype="twodash") +
+  #scale_x_reverse() +
+  labs(title = "Marginal effect of YearBuilt") +  xlab("YearBuilt") + ylab("Marginal Effect") +
+  scale_color_identity(name = "Model",
+                       breaks = c("darkred", "steelblue"),
+                       labels = c("ALE", "PD"),
+                       guide = "legend") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+   xlab("YearBuilt") + ylab("Marginal Effect") #xlim(0, 1800) + ylim(-1000, 50000) +
+g
+ggsave(filename = paste0(path, "/results/Combination_ALE_PDP_YearBuilt.jpg"), plot = g)
 
 #------------------------
 #Remod
-eff <- FeatureEffect$new(mod, feature = "Remod", method="ale", grid.size = 100)
-g = plot(eff)
+eff <- FeatureEffect$new(mod, feature = "Remod", method="ale", grid.size = 20)
+g = plot(eff) + scale_x_continuous(breaks= seq(0, 1, by= 1)) + geom_line(colour="darkred", size = 0.7) + #+ xlim(0, 3500)
+  labs(title = "ALE plot of SalePrice using Remod", subtitle = "grid size = 20") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) 
 g
-ggsave(filename = paste0(path, "/results/ALE_Remod.jpg"), plot = g, dpi = 450)
+ggsave(filename = paste0(path, "/results/ALE_Remod.jpg"), plot = g, dpi = 450, width = 9, height = 6)
 
 # eff <- FeatureEffect$new(mod, feature = "Remod", method="pdp", grid.size = 60)
 # plot(eff)
 
 #------------------------
 #YearBuilt + Remod
-eff <- FeatureEffect$new(mod, feature = c("YearBuilt", "Remod"), grid.size = 100, method="ale")
+eff <- FeatureEffect$new(mod, feature = c("YearBuilt", "Remod"), grid.size = 20, method="ale")
 g = plot(eff) +   #scale_fill_gradient(low="blue", high="red") + 
   ggtitle("ALE") + scale_fill_viridis_c(name = "ALE")  +
-  labs(title = "ALE of SalePrice") +
+  labs(title = "ALE of SalePrice", subtitle = "grid size = 20" ) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
   scale_y_continuous(breaks= seq(0, 1, by= 1)) +
   geom_point(data = training_data, aes(y =Remod, x = YearBuilt),color = "black", size = 1)
 g
-ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod.jpg"), plot = g, dpi = 450, width = 8, height = 6)
+ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod.jpg"), plot = g, dpi = 450, width = 9, height = 6)
 
 g = plot(eff) +   #scale_fill_gradient(low="blue", high="red") + 
-  ggtitle("ALE of SalePrice") + scale_fill_viridis_c(name = "ALE")  +
+  labs(title = "ALE of SalePrice", subtitle = "grid size = 20" )  + scale_fill_viridis_c(name = "ALE")  +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
  scale_y_continuous(breaks= seq(0, 1, by= 1)) + scale_x_continuous(breaks= seq(2000, 2012, by= 2), limits = c(2000,NA))
 g
-ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod_partial.jpg"), plot = g, dpi = 450, width = 8, height = 6)
+ggsave(filename = paste0(path, "/results/ALE_YearBuilt_with_Remod_partial.jpg"), plot = g, dpi = 450, width = 9, height = 6)
 training_data %>% filter(YearBuilt>2005) %>% count()
 training_data %>% filter(YearBuilt==2006) %>% count()
 training_data %>% filter(YearBuilt==2006 &Remod==1) %>% count()
@@ -132,9 +140,9 @@ ggsave(filename = paste0(path, "/results/SHAP_dependence_YearBuilt_with_Remod.jp
 #GrLivArea
 
 #ALE
-eff <- FeatureEffect$new(mod, feature = "GrLivArea", method="ale", grid.size = 200)
+eff <- FeatureEffect$new(mod, feature = "GrLivArea", method="ale", grid.size = 80)
 g1 = plot(eff)  + geom_line(colour="darkred", size = 0.7) + #+ xlim(0, 3500)
-  labs(title = "ALE plot of SalePrice using GrLivArea") +
+  labs(title = "ALE plot of SalePrice using GrLivArea", subtitle = "grid size = 80") +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 g1
 ggsave(filename = paste0(path, "/results/ALE_GrLivArea.jpg"), plot = g1, dpi = 450, width = 8, height = 6) 
@@ -142,29 +150,79 @@ ggsave(filename = paste0(path, "/results/ALE_GrLivArea.jpg"), plot = g1, dpi = 4
 # g2
 
 #Combination ALE & PDP
-eff <- FeatureEffect$new(mod, feature = "GrLivArea", method="pdp", grid.size = 60)
+eff <- FeatureEffect$new(mod, feature = "GrLivArea", method="pdp", grid.size = 30)
 eff.dat_pdp <- eff$results %>% mutate(.value = .value-min(.value))
-eff <- FeatureEffect$new(mod, feature = "GrLivArea", method="ale", grid.size = 60)
+eff <- FeatureEffect$new(mod, feature = "GrLivArea", method="ale", grid.size = 30)
 eff.dat_ale<- eff$results %>% mutate(.value = .value-min(.value))
-g = ggplot() + 
-  geom_line(aes(y = eff.dat_ale$.value, x=eff.dat_ale$GrLivArea), color="steelblue", linetype="twodash") + 
-  geom_line(aes(y = eff.dat_pdp$.value, x=eff.dat_pdp$GrLivArea), color="darkred") +
-  xlab("GrLivArea") + ylab("Marginal Effect") +
-  labs(title = "Marginal effect of ALE and PDP using GrLivArea") +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+g = ggplot() +
+  geom_line(aes(y = eff.dat_ale$.value, x=eff.dat_ale$GrLivArea, color = "darkred")) +
+  geom_line(aes(y = eff.dat_pdp$.value, x=eff.dat_pdp$GrLivArea, color="steelblue"), linetype="twodash") +
+  labs(title = "Marginal effect of GrLivArea") + xlab("GrLivArea") + ylab("Marginal Effect") +
+  #scale_x_reverse() +
+  scale_color_identity(name = "Model",
+                       breaks = c("darkred", "steelblue"),
+                       labels = c("ALE", "PD"),
+                       guide = "legend") +
+  geom_rug(alpha = 0.2, position = "jitter", sides="b", aes(y =  training_data$GrLivArea, x= training_data$GrLivArea)) +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
+  xlab("GrLivArea") + ylab("Marginal Effect") #xlim(0, 1800) + ylim(-1000, 50000) +
 g
 ggsave(filename = paste0(path, "/results/Combination_ALE_PDP_GrLivArea.jpg"), plot = g, dpi = 450)
 
 #-------------------
 #OverallQual
 #ALE
-eff <- FeatureEffect$new(mod, feature = "OverallQual", method="ale")
+eff <- FeatureEffect$new(mod, feature = "OverallQual", method="ale", grid.size = 20)
 g1 = plot(eff)  + geom_line(colour="steelblue", size = 0.7) +
-  labs(title = "ALE plot of SalePrice using OverallQual") +
+  labs(title = "ALE plot of SalePrice using OverallQual", subtitle = "grid size = 20") +
   scale_x_continuous(breaks= seq(1, 10, by= 1)) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 g1
-ggsave(filename = paste0(path, "/results/ALE_OverallQual.jpg"), plot = g1, dpi = 450, width = 8, height = 6)
+ggsave(filename = paste0(path, "/results/ALE_OverallQual.jpg"), plot = g1, dpi = 450, width = 8, height = 5)
+ggsave(filename = paste0(path, "/results/ALE_OverallQual_version_2.jpg"), plot = g1, dpi = 450, width = 8, height = 6)
+#ALE as category
+eff <- FeatureEffect$new(mod, feature = "OverallQual", method="ale", grid.size = 20)
+eff$feature.type = "categorical"
+g1 = plot(eff)  + #geom_line(colour="steelblue", size = 0.7) +
+  #labs(title = "ALE plot of SalePrice using OverallQual") +
+  scale_x_continuous(breaks= seq(1, 10, by= 1)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+g1
+ggsave(filename = paste0(path, "/results/ALE_OverallQual_Categorical.jpg"), plot = g1, dpi = 450, width = 8, height = 5)
+
+#ALE + PDP
+eff <- FeatureEffect$new(mod, feature = "OverallQual", method="pdp", grid.size = 20)
+eff.dat_pdp <- eff$results %>% mutate(.value = .value-min(.value))
+eff <- FeatureEffect$new(mod, feature = "OverallQual", method="ale", grid.size = 20)
+eff.dat_ale<- eff$results %>% mutate(.value = .value-min(.value))
+g = ggplot() +
+  geom_line(aes(y = eff.dat_ale$.value, x=eff.dat_ale$OverallQual, color = "darkred")) +
+  geom_line(aes(y = eff.dat_pdp$.value, x=eff.dat_pdp$OverallQual, color="steelblue"), linetype="twodash") +
+  labs(title = "Marginal effect of OverallQual") +   xlab("OverallQual") + ylab("Marginal Effect") +
+  #scale_x_reverse() +
+  scale_color_identity(name = "Model",
+                       breaks = c("darkred", "steelblue"),
+                       labels = c("ALE", "PD"),
+                       guide = "legend") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+  xlab("OverallQual") + ylab("Marginal Effect") #xlim(0, 1800) + ylim(-1000, 50000) +
+g
+ggsave(filename = paste0(path, "/results/Combination_ALE_PDP_OverallQual.jpg"), plot = g, dpi = 450)
+
+#SHAP Dependence
+shap_long <- shap.prep(xgb_model = xgmodel$learner.model, X_train = select(training_data, - SalePrice))
+g1 <- shap.plot.dependence(data_long = shap_long, x = 'OverallQual', y = 'OverallQual') + 
+  labs(title = "Shapley values for OverallQual") +
+  scale_color_gradient(low="red", high="green") +
+  scale_x_continuous(breaks= seq(1, 10, by= 1)) 
+g1 = g1 + labs(color = "OverallQual") +geom_point(size=1) +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) 
+g1$layers[[2]] = NULL
+g1
+ggsave(filename = paste0(path, "/results/SHAP_dependence_OverallQual.jpg"), plot = g1,dpi = 450, width = 10, height = 6)
+
+
 
 #LotArea
 #ALE
@@ -178,14 +236,14 @@ ggsave(filename = paste0(path, "/results/ALE_LotArea.jpg"), plot = g1, dpi = 450
 #-------------------
 #GrLivArea + OverallQual 
 #ALE
-eff <- FeatureEffect$new(mod, feature = c("GrLivArea", "OverallQual"), method="ale")
+eff <- FeatureEffect$new(mod, feature = c("GrLivArea", "OverallQual"), method="ale", grid.size = 20)
 g = plot(eff) +   #scale_fill_gradient(low="blue", high="red") + 
    scale_fill_viridis_c(name = "ALE")  +
-  labs(title = "ALE of SalePrice") +
+  labs(title = "ALE of SalePrice", subtitle = "grid size = 20") +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
   scale_y_continuous(breaks= seq(1, 10, by= 1))
 g
-ggsave(filename = paste0(path, "/results/ALE_GrLivArea_with_OverallQual.jpg"), plot = g, dpi = 450, width = 8, height = 6)
+ggsave(filename = paste0(path, "/results/ALE_GrLivArea_with_OverallQual.jpg"), plot = g, dpi = 450, width = 9, height = 6)
 
 
 #Shap Dependence
@@ -271,18 +329,23 @@ g
 ggsave(filename = paste0(path, "/results/ALE_TotalBsmtSF.jpg"), plot = g, dpi = 450)
 
 #Combination
-eff <- FeatureEffect$new(mod, feature = "TotalBsmtSF", method="pdp", grid.size = 60)
+eff <- FeatureEffect$new(mod, feature = "TotalBsmtSF", method="pdp", grid.size = 20)
 eff.dat_pdp <- eff$results %>% mutate(.value = .value-min(.value))
-eff <- FeatureEffect$new(mod, feature = "TotalBsmtSF", method="ale", grid.size = 60)
+eff <- FeatureEffect$new(mod, feature = "TotalBsmtSF", method="ale", grid.size = 20)
 eff.dat_ale<- eff$results %>% mutate(.value = .value-min(.value))
 g = ggplot() + 
-  geom_line(aes(y = eff.dat_ale$.value, x=eff.dat_ale$TotalBsmtSF), color="steelblue", linetype="twodash") + 
-  geom_line(aes(y = eff.dat_pdp$.value, x=eff.dat_pdp$TotalBsmtSF), color="darkred") +
-  xlim(0, 1800) + ylim(-1000, 50000) + xlab("TotalBsmtSF") + ylab("Marginal Effect") +
-  labs(title = "Marginal effect of ALE and PDP using TotalBsmtSF") +
+  geom_line(aes(y = eff.dat_pdp$.value, x=eff.dat_pdp$TotalBsmtSF, color="steelblue"), linetype="twodash") + 
+  geom_line(aes(y = eff.dat_ale$.value, x=eff.dat_ale$TotalBsmtSF, color="darkred")) +
+  xlim(0, 2000) + ylim(-1000, 50000) + xlab("TotalBsmtSF") + ylab("Marginal Effect") +
+  labs(title = "Marginal effect of TotalBsmtSF", subtitle="grid size = 20") +
+  scale_color_identity(name = "Model",
+                       breaks = c("darkred", "steelblue"),
+                       labels = c("ALE", "PD"),
+                       guide = "legend") +
+  geom_rug(alpha = 0.2, position = "jitter", sides="b", aes(y =  training_data$TotalBsmtSF, x= training_data$TotalBsmtSF)) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 g
-ggsave(filename = paste0(path, "/results/Combination_ALE_PDP_TotalBsmtSF.jpg"), plot = g, dpi = 450)
+ggsave(filename = paste0(path, "/results/Combination_ALE_PDP_TotalBsmtSF.jpg"), plot = g, dpi = 450, width = 8, height = 6)
 
 
 
