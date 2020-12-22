@@ -48,7 +48,7 @@ point2_shap_plot = point2_shap %>% slice(1:15)
 
 p1<-ggplot(data=point1_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ", rfvalue), abs(value)))) +
   labs(title = paste0("Shapley values for observation with high OverallQual"),
-         subtitle = paste0("Predicted Sale Price: ", round(point1_shap_sum,0))) +
+         subtitle = paste0("Predicted Sale Price: ", round(point1_shap_sum,0), " (Mean: ", round(bias,0), ")")) +
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-25000,
            size=3)+ xlim(-30000, NA) +
@@ -59,7 +59,7 @@ ggsave(filename = paste0(path, "/results/SHAP_values_observation_high_quality.jp
 
 p2<-ggplot(data=point2_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ", rfvalue), abs(value)))) +
   labs(title = paste0("Shapley values for observation with low OverallQual"),
-       subtitle = paste0("Predicted Sale Price: ", round(point2_shap_sum,0))) +
+       subtitle = paste0("Predicted Sale Price: ", round(point2_shap_sum,0), " (Mean: ", round(bias,0), ")")) +
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-30000,
             size=3)+ xlim(-35000, NA) +
@@ -92,7 +92,7 @@ g1
 ggsave(filename = paste0(path, "/results/Local_Model_prediction_k10.jpg"), plot = g1)
 
 
-#Choose 30 
+#Choose 20 
 local_model <- LocalModel$new(mod, x.interest = point2, k = 20)
 local_model$results
 best_model_index = local_model$best.fit.index
@@ -110,6 +110,25 @@ intercept2 = local_model$model$a0[best_model_index]
 g2 = plot(local_model)
 g2
 ggsave(filename = paste0(path, "/results/Local_Model_prediction_k30.jpg"), plot = g2)
+
+#But using these resut plots only makes sense to some extent, because range is completely fucked up
+#E.g. Yearbuilt starts somewhere around 1900 and to capture marginal effect, 
+# coefficient has to be correct --> intercept needs to make up for it, that yearbuilt starts in 1900
+
+min_variables = training_data %>% select(YearBuilt, GrLivArea, LotArea) %>% summarize_all(min)
+ 
+
+# local_model_k30_results = local_model$results
+# local_model_k30_results["YearBuilt"]
+# row_year = grep("YearBuilt", rownames(local_model_k30_results))
+# row_livarea = grep("GrLivArea", rownames(local_model_k30_results))
+# row_lotarea = grep("LotArea", rownames(local_model_k30_results))
+# local_model_k30_results[row_year,"effect"] = local_model_k30_results[row_year,"effect"] - local_model_k30_results[row_year,"beta"]*pull(min_variables["YearBuilt"])
+# local_model_k30_results[row_livarea,"effect"] = local_model_k30_results[row_livarea,"effect"] - local_model_k30_results[row_livarea,"beta"]*pull(min_variables["GrLivArea"])
+# local_model_k30_results[row_lotarea,"effect"] = local_model_k30_results[row_lotarea,"effect"] - local_model_k30_results[row_lotarea,"beta"]*pull(min_variables["LotArea"])
+# local_model$results = local_model_k30_results
+# g2_2 = plot(local_model)
+# g2_2
 
 #Choose 40 
 local_model <- LocalModel$new(mod, x.interest = point2, k = 40)
