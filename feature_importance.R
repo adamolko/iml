@@ -9,7 +9,7 @@ ada_check = FALSE
 if(ada_check){
   path = ""
 } else{
-  path ="D:/R - Workspace/IML"
+  path ="C:/R - Workspace/IML"
 }
 #get the model & the training data first
 xgmodel = readRDS(paste0(path, "/results/xgboost_model.rds"))
@@ -62,6 +62,7 @@ shap_values$mean_shap_score =  shap_values$shap_score %>% summarise_all(~ mean(a
 #Now get the means in correct form for plotting
 plotting_data = as_tibble(shap_values$mean_shap_score) %>% pivot_longer(cols = everything())
 plotting_data = plotting_data %>% mutate(name = ifelse(name == "Electrical.Fuse.or.Mix", "Electrical", name))
+shap_ranks = plotting_data
 
 p<-ggplot(data=plotting_data, aes(x=value, y=reorder(name, value))) +
   geom_bar(stat="identity", fill="steelblue") +
@@ -150,7 +151,7 @@ imp = featureImportance(xgmodel, data = training_data, n.feat.perm = 50, measure
                         features = permutation_list
                         )
 plotting_data = summary(imp)
-
+permutation_ranks = plotting_data
 
 p3<-ggplot(data=plotting_data, aes(x=RMSE, y=reorder(features, RMSE))) +
   geom_bar(stat="identity", fill="steelblue") +
@@ -162,6 +163,13 @@ p3<-ggplot(data=plotting_data, aes(x=RMSE, y=reorder(features, RMSE))) +
 #geom_text(aes(label=abs_value), vjust=0, size=2)
 p3
 ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), plot = p3, dpi = 450)
+
+#Difference between Permutation & Shap rankings
+ranks = left_join(permutation_ranks %>% rename(name = features), shap_ranks, by="name")
+cor(ranks$RMSE, ranks$value, method = "spearman")
+#0.9492921
+
+
 
 #For Comparison with RMSLE:
 f = function(task, model, pred, feats, extra.args) {
