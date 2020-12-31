@@ -90,7 +90,7 @@ traintask <- makeRegrTask(data = train,target = "SalePrice")
 testtask <- makeRegrTask(data = test, target = "SalePrice")
 
 lrn <- makeLearner("regr.xgboost",predict.type = "response")
-lrn$par.vals <- list( objective="reg:squarederror", eval_metric="rmsle", eta=0.1)
+lrn$par.vals <- list(eval_metric="rmsle") # objective="reg:squarederror", 
 
 params <- makeParamSet( makeIntegerParam("max_depth",lower = 2L,upper = 10L), 
                         makeNumericParam("min_child_weight",lower = 1L,upper = 10L), 

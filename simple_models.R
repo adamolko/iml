@@ -12,7 +12,7 @@ library(ipred)
 library(mctest)
 library(randomForest)
 library(tidyverse)
-
+library(mlr)
 
 
 ada_check = FALSE
@@ -107,17 +107,38 @@ rmsle_lasso
 #--------------------------------------
 #Random Forest
 set.seed(123)
-random_forest<- randomForest(x = train_X, y=train_y)
-random_forest
 
-pred_randomForest =  predict(random_forest, test_X)
+#Small hyperparameter tuning:
+traintask <- makeRegrTask(data = train,target = "SalePrice")
+testtask <- makeRegrTask(data = test, target = "SalePrice")
 
-rmse_randomForest <- rmse(test_y, pred_randomForest)
+lrn <- makeLearner("regr.randomForest",predict.type = "response")
+params <- makeParamSet( makeIntegerParam("maxnodes",lower = 10,upper = 200), 
+                        makeIntegerParam("nodesize",lower = 3,upper = 20), 
+                        makeIntegerParam("ntree",lower = 200,upper = 500))
+rdesc <- makeResampleDesc(maxit = 100)
+ctrl <- makeTuneControlRandom()
+
+mytune <- tuneParams(learner = lrn, task = traintask, resampling = rdesc, 
+                     par.set = params, control = ctrl, show.info = T)
+saveRDS(mytune, paste0(path, "/tuning_result_randomForest.rds"))
+
+#Run best model with these parameters
+set.seed(123)
+parameters = mytune$x 
+lrn_tune <- setHyperPars(lrn,par.vals = parameters)  
+
+random_forest <- train(learner = lrn_tune,task = traintask)
+pred_randomForest <- predict(random_forest,testtask)
+
+
+rmse_randomForest <- rmse(pred_randomForest$data$truth, pred_randomForest$data$response)
 rmse_randomForest
-#28236.06
-rmsle_randomForest <- rmsle(test_y, pred_randomForest)
+#28394.61
+rmsle_randomForest <- rmsle(pred_randomForest$data$truth, pred_randomForest$data$response)
 rmsle_randomForest
-#0.135233
+#0.1360805
+
 
 
 
