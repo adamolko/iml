@@ -10,8 +10,9 @@ if(ada_check){
   path = ""
   source(cleaning_path_train)
 } else{
-  path ="C:/R - Workspace/IML"
+  path ="D:/R - Workspace/IML"
 }
+
 
 #get the models & the training data first
 xgmodel = readRDS(paste0(path, "/results/xgboost_model.rds"))
@@ -169,6 +170,32 @@ g = ggplot() +
 g
 ggsave(filename = paste0(path, "/results/Combination_ALE_PDP_GrLivArea.jpg"), plot = g, dpi = 450)
 
+
+#Compare to linear regression ALE
+eff <- FeatureEffect$new(mod_lm, feature = "GrLivArea", method="ale", grid.size = 80)
+g2 = plot(eff) + geom_line(colour="steelblue", linetype="twodash", size = 0.7) +
+  labs(title = "Marginal effect on SalePrice using YearBuilt", subtitle="model = linear regression") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+g2
+
+#Combination ALE of xgboost and linear reg
+eff <- FeatureEffect$new(mod, feature = "GrLivArea", method="ale", grid.size = 80)
+eff.dat_xgboost <- eff$results #%>% mutate(.value = .value-max(.value))
+eff <- FeatureEffect$new(mod_lm, feature = "GrLivArea", method="ale", grid.size = 80)
+eff.dat_lm<- eff$results #%>% mutate(.value = .value-max(.value))
+g = ggplot() +
+  geom_line(aes(y = eff.dat_lm$.value, x=eff.dat_lm$GrLivArea, color="steelblue"), linetype="twodash") + 
+  geom_line(aes(y = eff.dat_xgboost$.value, x=eff.dat_xgboost$GrLivArea, color="darkred")) + # scale_x_reverse() +
+  xlab("GrLivArea") + ylab("Marginal Effect (ALE)") +  #xlim(0, 1800) + ylim(-1000, 50000) +
+  scale_color_identity(name = "Model",
+                       breaks = c("darkred", "steelblue"),
+                       labels = c("Xgboost", "Linear Regression"),
+                       guide = "legend") +
+  labs(title = "ALE plot of SalePrice using GrLivArea" , subtitle = "both models, grid size = 80") + #xlim(NA, 4000) +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+g
+ggsave(filename = paste0(path, "/results/Combination_ALE_GrLivArea_xgboost_lm.jpg"), plot = g, dpi = 450, width = 8, height = 6) 
+
 #-------------------
 #OverallQual
 #ALE
@@ -222,6 +249,24 @@ g1$layers[[2]] = NULL
 g1
 ggsave(filename = paste0(path, "/results/SHAP_dependence_OverallQual.jpg"), plot = g1,dpi = 450, width = 10, height = 6)
 
+#Combination ALE of xgboost and linear reg
+eff <- FeatureEffect$new(mod, feature = "OverallQual", method="ale", grid.size = 20)
+eff.dat_xgboost <- eff$results #%>% mutate(.value = .value-max(.value))
+eff <- FeatureEffect$new(mod_lm, feature = "OverallQual", method="ale", grid.size = 20)
+eff.dat_lm<- eff$results #%>% mutate(.value = .value-max(.value))
+g = ggplot() +
+  geom_line(aes(y = eff.dat_lm$.value, x=eff.dat_lm$OverallQual, color="steelblue"), linetype="twodash") + 
+  geom_line(aes(y = eff.dat_xgboost$.value, x=eff.dat_xgboost$OverallQual, color="darkred")) + # scale_x_reverse() +
+  xlab("OverallQual") + ylab("Marginal Effect (ALE)") +  #xlim(0, 1800) + ylim(-1000, 50000) +
+  scale_color_identity(name = "Model",
+                       breaks = c("darkred", "steelblue"),
+                       labels = c("Xgboost", "Linear Regression"),
+                       guide = "legend") +
+  labs(title = "ALE plot of SalePrice using OverallQual" , subtitle = "both models, grid size = 20") + #xlim(NA, 4000) +
+  scale_x_continuous(breaks= seq(1, 10, by= 1)) +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+g
+ggsave(filename = paste0(path, "/results/Combination_ALE_OverallQual_xgboost_lm.jpg"), plot = g, dpi = 450, width = 8, height = 6) 
 
 
 #LotArea
