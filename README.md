@@ -2,26 +2,58 @@
 Project for Interpretable Machine Learning using Housing Prices dataset.
 
 ## Dataset & Overview
-The benchmark dataset for this project can be found [here](data/ml-100k/u.data) in our repository, or be downloaded directly from the [Website](https://grouplens.org/datasets/movielens/100k/).
+The dataset for this project can be found [here](data/train.csv) in our repository, or be downloaded directly from [Kaggle](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data).
 
 If you want to recreate the analysis you can run the following files in this order:
 
 | File                                                                               | Content                                                  |
 |------------------------------------------------------------------------------------|----------------------------------------------------------|
-| [movielens_descriptives.R](movielens_descriptives.R)                               | Analyze and describe dataset, plot feature distributions |
-| [model_selection.ipynb](model_selection.ipynb)                                     | Hyperparametertuning for kNN and SVD                     |
-| [scenario1.ipynb](scenario1.ipynb)                                                 | Analyze change in prediction for review bombing          |
-| [scenario2.ipynb](scenario2.ipynb)                                                 | Analyze change in prediction for paid reviews            |
-| [Fake_Ratings_in_Recommender_Systems.pdf](Fake_Ratings_in_Recommender_Systems.pdf) | In-depth report of analysis                              |
+| [cleaning_train.R](cleaning_train.R)                               | Data cleaning |
+| [simple_models.R](simple_models.R)                                     | Implementation of 3 baseline (interpretable) models                     |
+| [xgboost_train.R](xgboost_train.R)                                                 | Implementation of black box model - XGBoost          |
+| [outlier_detection.R](outlier_detection.R)                                                 | Analyze the dataset for presence of outliers          |
+| [outlier_analysis.R](outlier_analysis.R)                                                 | More in-depth look at the detected outliers            |
+| [feature_importance.R](feature_importance.R) | Implementation of feature importance algorithms for XGBoost and Linear Regression                              |
+| [specific_hypotheses.R](specific_hypotheses.R) | Analysis of hypotheses related to specific features                              |
+| [specific_points.R](specific_points.R) | Analysis of hypotheses related to specific points                              |
 
-Descriptions of the code are given in the respective file.
+Files also contain extensive commentary for better code flow comprehension.
 
 ## Software Requirements
-In order to run the R code, you will need the following
-module versions:
+The following module versions (or above) are required to reproduce the code:
 
 R = 4.0.3  
-gridExtra = 2.3   
+
+### For data cleaning and preprocessing
 dplyr = 1.0.2  
+plyr = 1.8.6  
+tidyverse = 1.3.0  
 readr = 1.4.0     
-ggplot2 = 3.3.3  
+ggplot2 = 3.3.2  
+corrplot = 0.84  
+caret = 6.0.86  
+Hmisc = 4.4.2  
+Metrics = 0.1.4  
+viridis = 0.5.1  
+partykit = 1.2.11  
+variables = 1.0.3  
+forcats = 0.5.0  
+data.table = 1.14.0
+
+
+### For models
+xgboost = 1.2.0.1  
+rpart = 4.1.15  
+rpart.plot = 3.0.9  
+glmnet = 4.0.2  
+cmaes = 1.0.11  
+mlr = 2.18.0  
+mlrCPO = 0.3.7
+
+### For interpretable ML
+iml = 0.10.1  
+SHAPforxgboost = 0.1.0  
+featureImportance = 0.9  
+
+### Require manual installation from github
+The github repository can be found [here](https://github.com/susanne-207/moc). The necessary packages are *counterfactuals* and corresponding version of *iml* package, which is different from the one mentioned above.

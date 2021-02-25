@@ -86,7 +86,7 @@ cor(housing$GarageYrBlt, housing$YearBuilt, use="complete.obs") #as expected are
 
 summary(housing$GarageType) #Type somehow describes, how garage relates to house
 #Have a lot of different categories here, that we can't really collapse
-#Let's drop it for now, because otherwise at ton of variables in one-hot encoding
+#Let's drop it for now, because otherwise a ton of variables in one-hot encoding
 
 summary(housing$GarageFinish) #GarageFinish is the condition of the interior of the garage
 #Based on impact in model later also dropped
@@ -212,7 +212,7 @@ housing = housing %>% select(-"1stFlrSF", -"2ndFlrSF" )
 #12) LandContour & Landslope
 summary(housing$LandContour) #Almost no variation at all
 ggplot(housing, aes(LandContour, ..count..)) + geom_bar(aes(fill = LandSlope), position = "dodge") # + both capture almost the same thing
-#lets only keep one of them them:
+#lets only keep one of them:
 housing = housing %>% select(-LandContour)
 
 #13) Style of dwelling & MSSubClass & numb_add_flr
@@ -402,20 +402,6 @@ housing <- select(housing, -SeasonWarm, -MoSold)
 
 housing_full$MoSold  = as.numeric(levels(housing_full$MoSold))[housing_full$MoSold]
 
-#testing categorical variables for importance with ANOVA
-# non_numerics <- select_if(housing, negate(is.numeric))
-# non_numerics <- subset(non_numerics, -CentralAir, -PavedDrive)
-# probabilities <- c()
-# for (name in names(non_numerics)) {
-#   formula <- paste("SalePrice",name, sep = "~")
-#   model <- aov(as.formula(formula), data = housing)
-#   summary(model)
-#   sum_model = unlist(summary(model))
-#   probabilities[name] = sum_model["Pr(>F)1"]
-# }
-# print(probabilities<0.01)
-#for 99% confidence LandSlope, MiscVal and MoSold are not important -> drop
-
 #30) Miscval
 describe(housing$MiscVal)
 # --> 1407/1459 values 0, so lets drop it for now
@@ -423,7 +409,7 @@ housing = housing %>% select(-MiscVal)
 
 #31)Landslope
 describe(housing$LandSlope)
-#no impact in ANOVA, not a lot of variation, also not important in later analysis --> drop
+#not a lot of variation, also not important in later analysis --> drop
 housing <- select(housing, -LandSlope)
 
 #What is left?
@@ -439,7 +425,7 @@ housing %>% filter(OpenPorchSF>0 & ScreenPorch>0)
 housing %>% filter(ScreenPorch>0 & WoodDeckSF>0)
 summary(housing$WoodDeckSF)
 # ---> to some extent there are, although not that many
-#Lets try to just some up the area of wooddeck & porches and then use a categorical to indicate which type :)
+#Lets try to just sum up the area of wooddeck & porches and then use a categorical to indicate which type :)
 housing = housing %>% mutate(porch_area = WoodDeckSF + OpenPorchSF + EnclosedPorch + `3SsnPorch`  + ScreenPorch)
 housing = housing %>% mutate(porch_type = ifelse(WoodDeckSF>0, "wood_deck", NA))
 housing = housing %>% mutate(porch_type = ifelse(OpenPorchSF>0, ifelse(is.na(porch_type), "open_porch", "multiple"), porch_type))
@@ -483,8 +469,6 @@ housing$OverallQual  = as.numeric(levels(housing$OverallQual))[housing$OverallQu
 housing$OverallCond  = as.numeric(levels(housing$OverallCond))[housing$OverallCond]
 housing_full$OverallQual  = as.numeric(levels(housing_full$OverallQual))[housing_full$OverallQual]
 housing_full$OverallCond  = as.numeric(levels(housing_full$OverallCond))[housing_full$OverallCond]
-#REMEMBER THIS LINE FOR REPORT, IT COMPLETELY FUCKS UP OUR FACTOR
-#housing = housing %>% mutate(QualCond = as.numeric(OverallQual)* as.numeric(OverallCond))
 
 #36) Get a dummy if remodeling was done or not and drop remodeling year
 #Because interpretation a lot easier, and YearRemodAdd can't be used alone anyway, since = to YearBuilt if no remodeling done

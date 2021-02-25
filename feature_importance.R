@@ -5,15 +5,9 @@ library(SHAPforxgboost)
 library(iml)
 library(featureImportance)
 
-ada_check = FALSE
-if(ada_check){
-  path = ""
-} else{
-  path ="C:/R - Workspace/IML"
-}
 #get the model & the training data first
-xgmodel = readRDS(paste0(path, "/results/xgboost_model.rds"))
-training_data = readRDS(paste0(path, "/results/training_data.rds"))
+xgmodel = readRDS("results/xgboost_model.rds")
+training_data = readRDS("results/training_data.rds")
 
 #------------------------------------------
 #Shap Feature Importance
@@ -28,16 +22,8 @@ shap_values$shap_score = shap_values$shap_score %>% select(sort(current_vars()))
 list_categories = c(c("MSZoning", "MSZoning.C..all.", "MSZoning.RM"),
                     c("LotShape","LotShape.IR1","LotShape.Reg"),
                     c("BldgType","BldgType.1Fam","BldgType.TwnhsE"),
-                    #c("BsmtFinType1","BsmtFinType1.ALQ","BsmtFinType1.Unf"),
-                    #c("BsmtQual","BsmtQual.Ex","BsmtQual.TA"),
-                    #c("Electrical","Electrical.Fuse.or.Mix","Electrical.SBrkr"),
-                    #c("ExterCond","ExterCond.1","ExterCond.2"),
-                    #c("ExterQual","ExterQual.Ex","ExterQual.TA"),
-                    #c("FireplaceQu","FireplaceQu.AA","FireplaceQu.TA"),
                     c("Foundation","Foundation.BrkTil","Foundation.PConc"),
                     c("Functional","Functional.Min","Functional.Typ"),
-                   # c("HeatingQC","HeatingQC.Ex","HeatingQC.TA"),
-                    #c("KitchenQual","KitchenQual.Ex","KitchenQual.TA"),
                     c("Neighborhood","Neighborhood.Blmngtn","Neighborhood.Veenker"),
                     c("porch_type","porch_type.enclosed_porch","porch_type.wood_deck"),
                     c("RoofStyle","RoofStyle.Gable","RoofStyle.Hip"),
@@ -56,9 +42,6 @@ for(i in seq(from=1, to=length(list_categories), by=3)){
 #Now calculate absolute means manually for our feature importance measure:
 shap_values$mean_shap_score =  shap_values$shap_score %>% summarise_all(~ mean(abs(.)))
 
-#shap_values$shap_score = shap_values$shap_score %>% select(sort(current_vars()))
-#shap_values$mean_shap_score = shap_values$mean_shap_score %>% select(sort(current_vars()))
-
 #Now get the means in correct form for plotting
 plotting_data = as_tibble(shap_values$mean_shap_score) %>% pivot_longer(cols = everything())
 plotting_data = plotting_data %>% mutate(name = ifelse(name == "Electrical.Fuse.or.Mix", "Electrical", name))
@@ -70,11 +53,10 @@ p<-ggplot(data=plotting_data, aes(x=value, y=reorder(name, value))) +
   ylab("Feature") +
   labs(title = "SHAP Feature Importance (xgboost)") +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
-  #geom_text(aes(label=abs_value), vjust=0, size=2)
 p
 
 
-ggsave(filename = paste0(path, "/results/SHAP_feature_importance.jpg"), plot = p, dpi = 450)
+ggsave(filename = "results/SHAP_feature_importance.jpg", plot = p, dpi = 450)
 
 #----------------------------
 #Shap summary
@@ -88,7 +70,7 @@ p3 = shap.plot.summary.wrap1(model = xgmodel$learner.model, X =  select(training
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
   
 p3
-ggsave(filename = paste0(path, "/results/SHAP_summary_3.jpg"), plot = p3, dpi = 450)
+ggsave(filename = "results/SHAP_summary_3.jpg", plot = p3, dpi = 450)
 
 #------------------------------
 #Permutation Feature Importance 
@@ -160,16 +142,12 @@ p3<-ggplot(data=plotting_data, aes(x=RMSE, y=reorder(features, RMSE))) +
   labs(title = "Permutation Feature Importance (xgboost)") +
   scale_x_continuous(breaks= seq(0, 25000, by= 5000)) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
-#geom_text(aes(label=abs_value), vjust=0, size=2)
 p3
-ggsave(filename = paste0(path, "/results/permutation_feature_importance.jpg"), plot = p3, dpi = 450)
+ggsave(filename = "results/permutation_feature_importance.jpg", plot = p3, dpi = 450)
 
 #Difference between Permutation & Shap rankings
 ranks = left_join(permutation_ranks %>% rename(name = features), shap_ranks, by="name")
 cor(ranks$RMSE, ranks$value, method = "spearman")
-#0.9492921
-
-
 
 #For Comparison with RMSLE:
 f = function(task, model, pred, feats, extra.args) {
@@ -189,15 +167,11 @@ pp3<-ggplot(data=plotting_data2, aes(x=RMSLE, y=reorder(features, RMSLE))) +
   xlab("Feature Importance (RMSLE)") +
   ylab("Feature") +
   labs(title = "Permutation Feature Importance") +
-  #scale_x_continuous(breaks= seq(0, 25000, by= 5000)) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
-#geom_text(aes(label=abs_value), vjust=0, size=2)
 pp3
 
 #--------------------------------
 #Interaction strength - H -statistic
-
-#Warning: might have to reload packages afterwards, because it screws with some of the dependencies
 
 #For all variables:
 mod <- Predictor$new(xgmodel, data = select(training_data, - SalePrice), y = select(training_data, SalePrice))
@@ -231,13 +205,13 @@ plot(ia)
 
 #---------------------------------
 #Regression - Shap Feature Importance
-lm = readRDS(paste0(path, "/results/linear_regression.rds"))
-training_data_linear_reg = readRDS(paste0(path, "/results/train_linear_regression.rds"))
+lm = readRDS("results/linear_regression.rds")
+training_data_linear_reg = readRDS("results/train_linear_regression.rds")
 
 #Shap Feature Importance
 #No package available there
 
-#Permutation Feasure Importance  
+#Permutation Feature Importance  
 f = function(truth, response) {
   sqrt(sum(   ( truth  - response )^2) /length(truth)  )
 }
@@ -297,7 +271,7 @@ p4<-ggplot(data=plotting_data, aes(x=RMSE, y=reorder(features, RMSE))) +
   scale_x_continuous(breaks= seq(0, 25000, by= 5000)) +
   theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
 p4
-ggsave(filename = paste0(path, "/results/permutation_feature_importance_linear_regression.jpg"), plot = p4, dpi = 450)
+ggsave(filename = "results/permutation_feature_importance_linear_regression.jpg", plot = p4, dpi = 450)
 
 #T value Feature Importance  
 plotting_data = enframe(summary(lm)[["coefficients"]][, "t value"]) %>% slice(2:n) %>% mutate(value = abs(value))
@@ -307,6 +281,4 @@ p5<-ggplot(data=plotting_data, aes(x=value, y=reorder(name, value))) +
   xlab("t-value Feature Importance") +
   ylab("Feature")
 p5
-ggsave(filename = paste0(path, "/results/t_value_feature_importance_linear_regression.jpg"), plot = p5)
-#here we have the same problem again with dummies for our categories...
-
+ggsave(filename = "results/t_value_feature_importance_linear_regression.jpg", plot = p5)

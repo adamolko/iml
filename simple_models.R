@@ -15,14 +15,8 @@ library(tidyverse)
 library(mlr)
 
 
-ada_check = FALSE
-if(ada_check){
-  path = ""
-} else{
-  path ="D:/R - Workspace/IML"
-}
-path_train = paste0(path, "/data/train.csv")
-cleaning_path_train = paste0(path, "/cleaning_train.R")
+path_train  <- "data/train.csv"
+cleaning_path_train <- "cleaning_train.R"
 source(cleaning_path_train)
 data = housing
 
@@ -70,22 +64,20 @@ test_y <- test$SalePrice
 model_lm <- lm(SalePrice~., data = train)
 summary(model_lm)
 
-
-
 predictions_lm <- predict(model_lm, test_X)
 
 rmse_lm <- rmse(test_y, predictions_lm)
 rmse_lm
-#rmse of 34000.24
+
 rmsle_lm <- rmsle(test_y, predictions_lm)
 rmsle_lm
-#rmsle 0.1727657
 
-saveRDS(model_lm, paste0(path, "/results/linear_regression.rds"))
-saveRDS(train, paste0(path, "/results/train_linear_regression.rds"))
+saveRDS(model_lm, paste0(path, "results/linear_regression.rds"))
+saveRDS(train, paste0(path, "results/train_linear_regression.rds"))
+
+
 #--------------------------------------
 #LASSO
-#uses the same dummy encoding as lm
 set.seed(123)
 #choosing best lambda value based on training data
 lambdas <- 10^seq(2, -3, by = -.1)
@@ -98,10 +90,9 @@ lasso_model <- glmnet(data.matrix(train_X), train_y, alpha = 1, lambda = lambda_
 predictions_lasso <- predict(lasso_model, s = lambda_best, newx = data.matrix(test_X))
 rmse_lasso <- rmse(test_y, predictions_lasso)
 rmse_lasso
-#33906.95
+
 rmsle_lasso <- rmsle(test_y, predictions_lasso)
 rmsle_lasso
-#0.1705668
 
 
 #--------------------------------------
@@ -121,7 +112,7 @@ ctrl <- makeTuneControlRandom()
 
 mytune <- tuneParams(learner = lrn, task = traintask, resampling = rdesc, 
                      par.set = params, control = ctrl, show.info = T)
-saveRDS(mytune, paste0(path, "/tuning_result_randomForest.rds"))
+saveRDS(mytune, paste0(path, "results/tuning_result_randomForest.rds"))
 
 #Run best model with these parameters
 set.seed(123)
@@ -131,127 +122,8 @@ lrn_tune <- setHyperPars(lrn,par.vals = parameters)
 random_forest <- train(learner = lrn_tune,task = traintask)
 pred_randomForest <- predict(random_forest,testtask)
 
-
 rmse_randomForest <- rmse(pred_randomForest$data$truth, pred_randomForest$data$response)
 rmse_randomForest
-#28394.61
+
 rmsle_randomForest <- rmsle(pred_randomForest$data$truth, pred_randomForest$data$response)
 rmsle_randomForest
-#0.1360805
-
-
-
-
-
-
-
-
-
-
-
-
-
-#-----------------------------------
-#OTHER MODELS
-
-
-#--------------------------------------
-#REGRESSION TREES
-#with one-hot encoding rmse is actually worse
-train <- data[train_ind, ]
-test <- data[-train_ind, ]
-regtree_model <- rpart(formula = SalePrice ~ ., data = train)
-pred <- predict(regtree_model, newdata = test)
-rmse(test$SalePrice, pred)
-#44788.71
-rpart.plot(regtree_model)
-#cp - cost complexity value
-plotcp(regtree_model)
-
-#tuning
-hyper_grid <- expand.grid(
-  minsplit = seq(1, 20, 1),
-  maxdepth = seq(1, 15, 1),
-  method = c("anova", "poisson", "exp", "class")
-)
-models <- list()
-
-for (i in 1:nrow(hyper_grid)) {
-  
-  # get minsplit, maxdepth values at row i
-  minsplit <- hyper_grid$minsplit[i]
-  maxdepth <- hyper_grid$maxdepth[i]
-  method <- hyper_grid$method[i]
-  # train a model and store in the list
-  models[[i]] <- rpart(
-    formula = SalePrice ~ .,
-    data    = train,
-    control = list(minsplit = minsplit, maxdepth = maxdepth, method = method)
-  )
-}
-
-# function to get optimal cp
-get_cp <- function(x) {
-  min    <- which.min(x$cptable[, "xerror"])
-  cp <- x$cptable[min, "CP"] 
-}
-
-# function to get minimum error
-get_min_error <- function(x) {
-  min    <- which.min(x$cptable[, "xerror"])
-  xerror <- x$cptable[min, "xerror"] 
-}
-
-hyper_grid %>%
-  mutate(
-    cp    = purrr::map_dbl(models, get_cp),
-    error = purrr::map_dbl(models, get_min_error)
-  ) %>%
-  arrange(error) %>%
-  top_n(-5, wt = error)
-
-#if you choose the first model with anova, the error doesn't go down
-#method = "exp" requires the target variable to be of type survival, which is not our case
-#=> minsplit = 1, maxdepth = 13, cp = 0.01, method = poisson
-
-optimal_tree <- rpart(
-  formula = SalePrice ~ .,
-  data    = train,
-  method = "poisson",
-  control = list(minsplit = 14, maxdepth = 5, cp = 0.01)
-)
-
-pred <- predict(optimal_tree, newdata = test)
-rmse_regtree <- rmse(test$SalePrice, pred)
-rmse_regtree
-#42437.68 well, doesn't change that much
-rmsle_regtree <- rmsle(test$SalePrice, pred)
-rmsle_regtree
-#0.2312028
-
-#--------------------------------------
-#BAGGED TREES
-ctrl <- trainControl(method = "cv",  number = 10) 
-
-# CV bagged model
-bagged_cv <- train(
-  SalePrice ~ .,
-  data = train,
-  method = "treebag",
-  trControl = ctrl,
-  importance = TRUE
-)
-
-# assess results
-bagged_cv
-# plot most important variables
-plot(varImp(bagged_cv), 20)  
-
-predictions_bagging <- predict(bagged_cv, test)
-rmse_bagging <- rmse(test$SalePrice, predictions_bagging)
-rmse_bagging
-#36043.38
-
-rmsle_bagging <- rmsle(test$SalePrice, predictions_bagging)
-rmsle_bagging
-#0.20843

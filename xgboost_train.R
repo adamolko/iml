@@ -14,17 +14,8 @@ library(cmaes)
 
 set.seed(123)
 
-#ada_check = TRUE
-ada_check = FALSE
-
-if(ada_check){
-  path = ""
-} else{
-  path ="C:/R - Workspace/IML"
-  
-}
-path_train = paste0(path, "/data/train.csv")
-cleaning_path_train = paste0(path, "/cleaning_train.R")
+path_train = "data/train.csv"
+cleaning_path_train = "cleaning_train.R"
 source(cleaning_path_train)
 
 train = housing
@@ -109,7 +100,7 @@ library(parallelMap)
 parallelStart(mode="socket", cpu=8, level="mlr.tuneParams")
 mytune <- tuneParams(learner = lrn, task = traintask, resampling = rdesc, 
                      par.set = params, control = ctrl, show.info = T)
-saveRDS(mytune, paste0(path, "/tuning_result.rds"))
+saveRDS(mytune, "tuning_result.rds")
 mytune$x
 
 #--------------------------
@@ -120,7 +111,7 @@ testtask <- makeRegrTask(data = test, target = "SalePrice")
 
 lrn <- makeLearner("regr.xgboost",predict.type = "response")
 lrn$par.vals <- list( objective="reg:squarederror", eval_metric="rmsle")
-tuning_result <- readRDS(paste0(path, "/results/tuning_result.rds"))
+tuning_result <- readRDS("results/tuning_result.rds")
 parameters = tuning_result$x 
 lrn_tune <- setHyperPars(lrn,par.vals = parameters)  
 
@@ -133,8 +124,8 @@ rmsle_xgboost <- rmsle(xgpred$data$truth, xgpred$data$response)
 rmsle_xgboost
 
 #save training data & model for IML stuff
-saveRDS(xgmodel, paste0(path, "/results/xgboost_model.rds"))
-saveRDS(train, paste0(path, "/results/training_data.rds"))
+saveRDS(xgmodel, "results/xgboost_model.rds")
+saveRDS(train, "results/training_data.rds")
 
 
 
@@ -156,7 +147,7 @@ not_dummies <- c("LotArea", "YearBuilt", "TotalBsmtSF",
                  "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", "MoSold",
                  "LotFrontage", "MasVnrArea", "first_floor_sf", "second_floor_sf",
                  "TotRmsAbvGrd", "PoolArea", "LowQualFinSF", 
-                 "YrSold", "MiscVal", "GarageQual"    # "BsmtCond", "BsmtFullBath", "BsmtHalfBath",
+                 "YrSold", "MiscVal", "GarageQual"
                  )
 dummies <- select(train, -all_of(not_dummies))
 
@@ -178,7 +169,7 @@ testtask <- makeRegrTask(data = test, target = "SalePrice")
 
 lrn <- makeLearner("regr.xgboost",predict.type = "response")
 lrn$par.vals <- list( objective="reg:squarederror", eval_metric="rmsle")
-tuning_result <- readRDS(paste0(path, "/results/tuning_result.rds"))
+tuning_result <- readRDS("results/tuning_result.rds")
 parameters = tuning_result$x 
 lrn_tune <- setHyperPars(lrn,par.vals = parameters)  
 
@@ -189,7 +180,3 @@ rmse_xgboost <- rmse(xgpred$data$truth, xgpred$data$response)
 rmse_xgboost
 rmsle_xgboost <- rmsle(xgpred$data$truth, xgpred$data$response)
 rmsle_xgboost
-
-
-
-

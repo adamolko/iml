@@ -1,16 +1,8 @@
 library(ggplot2)
 library(tidyverse)
+library(data.table) 
 
-ada_check = TRUE
-
-if(ada_check){
-  path = ""
-  path_train <- "data/train.csv"
-  source("cleaning_train.R")
-} else{
-  path ="C:/R - Workspace/IML/"
-}
-
+# loading the results
 xgmodel <-  readRDS(paste0(path, "results/xgboost_model.rds"))
 training_data <-  readRDS(paste0(path, "results/training_data.rds"))
 shap_values <-  readRDS(paste0(path, "results/shap_values.rds"))
@@ -18,9 +10,11 @@ shap_long <- readRDS(paste0(path, "results/shap_long.rds"))
 
 bias = shap_values$BIAS0
 
+# filter for possible outliers according to the influence tree
 outliers <- training_data %>% filter(GrLivArea >= 3551)
 point_finder = shap_long %>% filter(rfvalue >= 3551 , variable == "GrLivArea")  %>% pull(ID)
 
+# retrieve the points and plot their shapley values
 point1_shap = shap_long %>% filter(ID == point_finder[1]) %>% arrange(desc(abs(value)))
 point1_shap_sum = sum(point1_shap %>% pull(value)) + bias
 point2_shap = shap_long %>% filter(ID == point_finder[2]) %>% arrange(desc(abs(value)))
@@ -43,7 +37,6 @@ p1<-ggplot(data=point1_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ",
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-25000,
             size=3)+ xlim(-30000, NA) +
-  #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p1
 
@@ -54,7 +47,6 @@ p2<-ggplot(data=point2_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ",
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-45000,
             size=3)+ xlim(-50000, NA) +
-  #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p2
 
@@ -64,7 +56,6 @@ p3<-ggplot(data=point3_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ",
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-25000,
             size=3)+ xlim(-30000, NA) +
-  #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p3
 
@@ -74,38 +65,30 @@ p4<-ggplot(data=point4_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ",
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-55000,
             size=3)+ xlim(-60000, NA) +
-  #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p4
 
-g1 <- ggplot(training_data, aes(x=GrLivArea, y=SalePrice, colour = GrLivArea < 3551)) +
+
+# plot cloud of training data points with simple linear trend line
+# mark in red the points that were in the right branch of the influence tree
+g <- ggplot(training_data, aes(x=GrLivArea, y=SalePrice, colour = GrLivArea < 3551)) +
   geom_point() + scale_x_continuous(limits = c(0,6000))+
   scale_y_continuous(limits = c(0,800000))+
   scale_color_discrete(name="Living Area > 3551", labels=c("Yes", "No")) + 
   geom_smooth(method = lm, color = "black", fullrange = TRUE)
-g1
+g
 
 #create dataframe without two possible outliers
 row.names.remove <- c("1299", "524")
 without_outliers <- training_data[!(row.names(training_data) %in% row.names.remove), ]
 
-g2 <- ggplot(without_outliers, aes(x=GrLivArea, y=SalePrice, colour = GrLivArea < 3551)) +
-  geom_point() + scale_x_continuous(limits = c(0,6000))+
-  scale_y_continuous(limits = c(0,800000))+
-  scale_color_discrete(name="Living Area > 3551", labels=c("Yes", "No")) + 
-  geom_smooth(method = lm, color = "black", fullrange = TRUE)
-g2
-#used geom_smooth() to check out how the trend changes if you remove the potential outliers
-#apparently they are not that influencial
-
+#check sample of features that are the top ones according to shapley values
 features <- c("SalePrice", "OverallQual", "GrLivArea", "porch_area", "LotArea", "GarageCars",
               "TotalBsmtSF", "ExterQual", "FullBath", "OverallCond", "KitchenQual", 
               "BedroomAbvGr", "numb_add_flr", "YearBuilt")
 
 outlier_features <- select(outliers, features)
-#check the features that are the top ones for shapley values
 
-library(data.table) 
 # transpose the dataframe to easier compare the feature values
 t_outliers <- transpose(outlier_features)
 
@@ -120,21 +103,3 @@ colnames(compare_table) <- c("point 3", "point 4")
 library(gridExtra)
 ggplot()
 grid.table(compare_table)
-
-#since point 3 seems to follow the general trend, we compare it to point 4, which has a 
-#surprisingly low SalePrice
-
-#shapley value for porch_area is negative for point 4, which makes sense, the less the 
-#porch area, the lower the price
-
-#the lot area is almost twice as large for point 4 compared to point 3
-#that explains why the shapley value for LotArea is negative for point 4, because it is simply too much
-
-#another notably differing feature value is that of OverallCond
-#for point 4 it is only 5 out 10, and since for both point 3 and point 4 OverallCond 
-#is quite important according to shapley values, it makes sense that for point 4 it is negative
-
-#other features seem to have more or less same values
-
-#so basically point 4 is not that much of an outlier, because largely differing values
-#can be explained by the shapley values

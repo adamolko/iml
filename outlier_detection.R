@@ -3,19 +3,11 @@ library(tidyverse)
 library(mlr)
 library(rpart)
 library(rpart.plot)
-ada_check = FALSE
-
-if(ada_check){
-  path = ""
-  source(cleaning_path_train)
-} else{
-  path ="C:/R - Workspace/IML"
-}
 
 #get the model, tuning parameters & the training data first
-xgmodel = readRDS(paste0(path, "/results/xgboost_model.rds"))
-training_data = readRDS(paste0(path, "/results/training_data.rds"))
-tuning_result <- readRDS(paste0(path, "/results/tuning_result.rds"))
+xgmodel = readRDS(paste0(path, "results/xgboost_model.rds"))
+training_data = readRDS(paste0(path, "results/training_data.rds"))
+tuning_result <- readRDS(paste0(path, "results/tuning_result.rds"))
 parameters = tuning_result$x 
 lrn_tune <- setHyperPars(lrn,par.vals = parameters)  
 
@@ -45,9 +37,9 @@ cs = lapply(1:nrow(training_data), function(to.remove.index) {
 influence.df = data.frame(cs)
 influence.df = as.matrix(influence.df)
 diag(influence.df) = NA
-saveRDS(influence.df, paste0(path, "/results/influence.df.rds"))
+saveRDS(influence.df, paste0(path, "results/influence.df.rds"))
 
-influence.df = readRDS(paste0(path, "/results/influence.df.rds"))
+influence.df = readRDS(paste0(path, "results/influence.df.rds"))
 influence_avg = data.frame(influence = colMeans(abs(influence.df), na.rm = TRUE), id = 1:nrow(training_data))
 influence_avg = influence_avg[order(influence_avg$influence, decreasing = TRUE),]
 
@@ -69,14 +61,12 @@ g = ggplot(training_data, aes(x=GrLivArea, y=SalePrice, colour = GrLivArea < 355
   geom_point() + 
   scale_color_discrete(name="Living Area > 3551", labels=c("Yes", "No"))
 g
-ggsave(filename = paste0(path, "/results/scatter_for_influence.jpg"), plot = g, dpi=450)
+ggsave(filename = paste0(path, "results/scatter_for_influence.jpg"), plot = g, dpi=450)
 
 ggplot(training_data, aes(x=GrLivArea, y=LotArea, colour = GrLivArea >= 623 & LotArea <2200 & porch_area < 543)) +
   geom_point()
 
-#TODO:
-#look at those observations in more detail (features!)
-
+# filter the dataframe for the observations in the right branch of the influence tree
 training_data %>% filter(GrLivArea >= 3551)
 
 shap_values <- shap.values(xgb_model = xgmodel$learner.model, X_train = select(training_data, - SalePrice))
@@ -99,14 +89,13 @@ point2_shap_plot = point2_shap %>% slice(1:15)
 point3_shap_plot = point3_shap %>% slice(1:15)
 point4_shap_plot = point4_shap %>% slice(1:15)
 
-
+# plotting the shapley values
 p1<-ggplot(data=point1_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ", rfvalue), abs(value)))) +
   labs(title = paste0("Shapley values for observation 1"),
        subtitle = paste0("Predicted Sale Price: ", round(point1_shap_sum,0))) +
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-25000,
             size=3)+ xlim(-30000, NA) +
-  #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p1
 
@@ -117,7 +106,6 @@ p2<-ggplot(data=point2_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ",
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-45000,
             size=3)+ xlim(-50000, NA) +
-  #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p2
 
@@ -127,7 +115,6 @@ p3<-ggplot(data=point3_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ",
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-25000,
             size=3)+ xlim(-30000, NA) +
-  #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p3
 
@@ -137,7 +124,6 @@ p4<-ggplot(data=point4_shap_plot, aes(x=value, y= reorder(paste0(variable, ": ",
   geom_col( aes(fill = abs(value))) +xlab("SHAP value") + ylab("Variable") +
   geom_text(aes(label=round(value, digits = 0)), color="black", x=-55000,
             size=3)+ xlim(-60000, NA) +
-  #hjust=-1*sign(value)
   scale_fill_gradient(name="SHAP value (abs.)")
 p4
 
