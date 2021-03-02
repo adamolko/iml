@@ -24,7 +24,7 @@ The following module versions (or above) are required to reproduce the code:
 
 R = 4.0.3  
 
-### For data cleaning and preprocessing
+### Data cleaning and preprocessing
 dplyr = 1.0.2  
 plyr = 1.8.6  
 tidyverse = 1.3.0  
@@ -41,7 +41,7 @@ forcats = 0.5.0
 data.table = 1.14.0
 
 
-### For models
+### Models
 xgboost = 1.2.0.1  
 rpart = 4.1.15  
 rpart.plot = 3.0.9  
@@ -50,10 +50,11 @@ cmaes = 1.0.11
 mlr = 2.18.0  
 mlrCPO = 0.3.7
 
-### For interpretable ML
+### Interpretable ML methods
 iml = 0.10.1  
 SHAPforxgboost = 0.1.0  
 featureImportance = 0.9  
 
-### Require manual installation from github
-The github repository can be found [here](https://github.com/susanne-207/moc). The necessary packages are *counterfactuals* and corresponding version of *iml* package, which is different from the one mentioned above.
+### Counterfactuals
+Require a manual installation from github!
+The github repository can be found [here](https://github.com/susanne-207/moc). The necessary packages are *counterfactuals* and the corresponding version of the *iml* package, which is different from the one mentioned above. We manually call the respective packages in our code (see [specific_points.R](specific_points.R)). 
