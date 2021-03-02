@@ -57,4 +57,4 @@ featureImportance = 0.9
 
 ### Counterfactuals
 Require a manual installation from github!
-The github repository can be found [here](https://github.com/susanne-207/moc). The necessary packages are *counterfactuals* and the corresponding version of the *iml* package, which is different from the one mentioned above. We manually call the respective packages in our code (see [specific_points.R](specific_points.R)). 
+The github repository can be found [here](https://github.com/susanne-207/moc). The necessary packages are *counterfactuals* and the corresponding version of the *iml* package, which is different from the one listed above. We manually call the respective packages in our code (see [specific_points.R](specific_points.R)). 
