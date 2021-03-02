@@ -1,5 +1,5 @@
 # Interpretable Machine Learning Seminar
-Project for Interpretable Machine Learning using Housing Prices dataset.
+Project code for the Interpretable Machine Learning using the Ames Housing Prices dataset.
 
 ## Dataset & Overview
 The dataset for this project can be found [here](data/train.csv) in our repository, or be downloaded directly from [Kaggle](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data).
