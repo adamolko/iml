@@ -54,6 +54,7 @@ test <- trsf[-train_ind, ]
 
 #--------------------------------
 #Simple example without tuning:
+set.seed(123)
 train_X <- select(train, -SalePrice)
 train_y <- train$SalePrice
 test_X <- select(test, -SalePrice)
