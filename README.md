@@ -24,7 +24,7 @@ The following module versions (or above) are required to reproduce the code:
 
 R = 4.0.3  
 
-### Data cleaning and preprocessing
+### Data Cleaning and Preprocessing
 dplyr = 1.0.2  
 plyr = 1.8.6  
 tidyverse = 1.3.0  
@@ -50,7 +50,7 @@ cmaes = 1.0.11
 mlr = 2.18.0  
 mlrCPO = 0.3.7
 
-### Interpretable ML methods
+### Interpretable ML Methods
 iml = 0.10.1  
 SHAPforxgboost = 0.1.0  
 featureImportance = 0.9  
