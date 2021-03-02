@@ -8,14 +8,14 @@ If you want to recreate the analysis set the working directoy to the project fol
 
 | File                                                                               | Content                                                  |
 |------------------------------------------------------------------------------------|----------------------------------------------------------|
-| [cleaning_train.R](cleaning_train.R)                               | Data cleaning and pre-processing. Called by [simple_models.R](simple_models.R) and [xgboost_train.R](xgboost_train.R) to get the ready-to-use dataset.
-| [simple_models.R](simple_models.R)                                     | Implementation and performance results of our 3 baseline (interpretable) models.                     |
-| [xgboost_train.R](xgboost_train.R)                                                 | Implementation and performance results of our black box model - XGBoost. Saves the model for future use for our IML methods.          |
-| [outlier_detection.R](outlier_detection.R)                                                 | Analyze the dataset for presence of outliers          |
-| [outlier_analysis.R](outlier_analysis.R)                                                 | More in-depth look at the detected outliers            |
-| [feature_importance.R](feature_importance.R) | Implementation of feature importance algorithms for XGBoost and Linear Regression                              |
-| [specific_hypotheses.R](specific_hypotheses.R) | Analysis of hypotheses related to specific features                              |
-| [specific_points.R](specific_points.R) | Analysis of hypotheses related to specific points                              |
+| [cleaning_train.R](cleaning_train.R)                               | Data cleaning and pre-processing. Called by [simple_models.R](simple_models.R) and [xgboost_train.R](xgboost_train.R) to get the ready-to-use dataset (see section 1 in the report).
+| [simple_models.R](simple_models.R)                                     | Implementation and performance results of our 3 baseline (interpretable) models. (see section 2 in the report).                     |
+| [xgboost_train.R](xgboost_train.R)                                                 | Implementation and performance results of our black box model - XGBoost. Saves the model for future use for our IML methods (see section 2 in the report).          |
+| [outlier_detection.R](outlier_detection.R)                                                 | Analyze the dataset for presence of outliers (see section 3 in the report).           |
+| [outlier_analysis.R](outlier_analysis.R)                                                 | More in-depth look at the detected outliers (see section 3 in the report).            |
+| [feature_importance.R](feature_importance.R) | Implementation of feature importance algorithms for XGBoost and Linear Regression (see section 4.1 in the report).                               |
+| [specific_hypotheses.R](specific_hypotheses.R) | Analysis of hypotheses related to specific features (see section 4.2 in the report)                              |
+| [specific_points.R](specific_points.R) | Analysis of hypotheses related to specific points (see section 4.3 in the report)                              |
 
 Files also contain extensive commentary for better code flow comprehension.
 
