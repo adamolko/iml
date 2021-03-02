@@ -4,7 +4,7 @@ Project for Interpretable Machine Learning using Housing Prices dataset.
 ## Dataset & Overview
 The dataset for this project can be found [here](data/train.csv) in our repository, or be downloaded directly from [Kaggle](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data).
 
-If you want to recreate the analysis you can run the following files in this order:
+If you want to recreate the analysis set the working directoy to the project folder. Then you can run the following files in this order:
 
 | File                                                                               | Content                                                  |
 |------------------------------------------------------------------------------------|----------------------------------------------------------|
