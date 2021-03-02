@@ -8,7 +8,7 @@ If you want to recreate the analysis set the working directoy to the project fol
 
 | File                                                                               | Content                                                  |
 |------------------------------------------------------------------------------------|----------------------------------------------------------|
-| [cleaning_train.R](cleaning_train.R)                               | Data cleaning |
+| [cleaning_train.R](cleaning_train.R)                               | Data cleaning and pre-processing. Called by [simple_models.R](simple_models.R) and [xgboost_train.R](xgboost_train.R) to get the ready-to-use dataset.
 | [simple_models.R](simple_models.R)                                     | Implementation of 3 baseline (interpretable) models                     |
 | [xgboost_train.R](xgboost_train.R)                                                 | Implementation of black box model - XGBoost          |
 | [outlier_detection.R](outlier_detection.R)                                                 | Analyze the dataset for presence of outliers          |
