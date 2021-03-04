@@ -47,8 +47,7 @@ trsf <- select(trsf, -all_of(reference_levels))
 
 train <- trsf
 #sampling train/test 75/25
-smp_size <- floor(0.75 * nrow(trsf))
-train_ind <- sample(seq_len(nrow(trsf)), size = smp_size)
+train_ind <- readRDS("results/train_ind.rds")
 train <- trsf[train_ind, ]
 test <- trsf[-train_ind, ]
 
