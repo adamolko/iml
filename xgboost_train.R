@@ -46,7 +46,13 @@ reference_levels <- c("MSZoning.RH", "LotShape.IR2.5",
 trsf <- select(trsf, -all_of(reference_levels))
 
 train <- trsf
+
 #sampling train/test 75/25
+
+# train_ind had the tendency to change even with the seed, so we saved them for reproducibility (in simple_models.R) 
+# smp_size <- floor(0.75 * nrow(data))
+# train_ind <- sample(seq_len(nrow(data)), size = smp_size)
+
 train_ind <- readRDS("results/train_ind.rds")
 train <- trsf[train_ind, ]
 test <- trsf[-train_ind, ]
